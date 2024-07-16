@@ -1,0 +1,33 @@
+.toolbar {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    z-index: 1000;
+    background-color: #fff;
+    padding: 10px;
+    border-radius: 5px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+  
+    .toolbar-btn {
+      margin-right: 5px;
+      padding: 8px;
+      border: none;
+      background-color: transparent;
+      cursor: pointer;
+  
+      i {
+        font-size: 16px;
+      }
+    }
+  
+    .toolbar-select {
+      margin-right: 5px;
+      padding: 8px;
+      border: 1px solid #ccc;
+      border-radius: 3px;
+      background-color: #fff;
+      cursor: pointer;
+      appearance: none; /* Remove default appearance */
+    }
+  }
+  
