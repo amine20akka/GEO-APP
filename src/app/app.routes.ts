@@ -4,6 +4,8 @@ import { AuthGuard } from 'app/core/auth/guards/auth.guard';
 import { NoAuthGuard } from 'app/core/auth/guards/noAuth.guard';
 import { LayoutComponent } from 'app/layout/layout.component';
 import { PMapComponent } from './modules/admin/dashboards/p-map/p-map.component';
+import { LayerManagementComponent } from './modules/admin/dashboards/layer-management/layer-management.component';
+import { ShortcutsComponent } from './layout/common/shortcuts/shortcuts.component';
 
 
 // @formatter:off
@@ -79,7 +81,10 @@ export const appRoutes: Route[] = [
             {path: 'example', loadChildren: () => import('app/modules/admin/example/example.routes')},
             {path: 'dashboards', children: [ 
                 { path: 'pmap', component: PMapComponent },
+                { path: 'layerManagement', component: LayerManagementComponent },
+
                 ]},
+
 
 
         ]

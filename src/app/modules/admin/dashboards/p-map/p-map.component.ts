@@ -27,9 +27,9 @@ export class PMapComponent implements OnInit, OnDestroy {
     // this.updateMapBackground(this.selectedMapSourceId);
 
     // Fetch and add WMS layers from GeoServer
-    this.layersService.fetchLayersFromWorkspace('test_data').then(data => {
-      // this.layersService.processWorkspaceLayersData(data, this.mapService.addWMSLayer.bind(this.mapService));
-    });
+    // this.layersService.fetchLayersFromWorkspace('test_data').then(data => {
+    //   // this.layersService.processWorkspaceLayersData(data, this.mapService.addWMSLayer.bind(this.mapService));
+    // });
   }
 
   ngOnDestroy(): void {

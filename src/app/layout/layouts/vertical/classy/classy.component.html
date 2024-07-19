@@ -3,7 +3,7 @@
 
 <!-- Navigation -->
 <fuse-vertical-navigation
-    class="dark bg-gray-900 print:hidden"
+    class="bg-gradient-to-br from-white to-white-300 border border-black border-opacity-5 print:hidden text-black text-center text-md font-medium leading-normal p-4"
     [mode]="isScreenSmall ? 'over' : 'side'"
     [name]="'mainNavigation'"
     [navigation]="navigation.default"
@@ -41,12 +41,12 @@
             </div>
             <div class="mt-6 flex w-full flex-col items-center justify-center">
                 <div
-                    class="w-full overflow-hidden text-ellipsis whitespace-nowrap text-center font-medium leading-normal"
+                    class="w-full overflow-hidden text-black whitespace-nowrap text-center font-medium leading-normal"
                 >
                     Agent
                 </div>
                 <div
-                    class="text-secondary mt-0.5 w-full overflow-hidden text-ellipsis whitespace-nowrap text-center text-md font-medium leading-normal"
+                    class="text-black mt-0.5 w-full overflow-hidden text-ellipsis whitespace-nowrap text-center text-md font-medium leading-normal"
                 >
                     agentSofrecom.com
                 </div>
@@ -76,6 +76,9 @@
         <!-- Components -->
         <div class="ml-auto flex items-center space-x-0.5 pl-2 sm:space-x-2">
             <!-- <languages></languages> -->
+            <button mat-icon-button (click)="openShortcuts()">
+                <mat-icon [svgIcon]="'heroicons_outline:arrow-down-tray'"></mat-icon>
+            </button>
             <fuse-fullscreen class="hidden md:block"></fuse-fullscreen>
             <search [appearance]="'bar'"></search>
             <shortcuts></shortcuts>
@@ -85,9 +88,12 @@
                 mat-icon-button
                 (click)="quickChat.toggle()"
             >
-                <mat-icon
-                    [svgIcon]="'heroicons_outline:chat-bubble-left-right'"
-                ></mat-icon>
+            <mat-icon
+            class="icon-size-6"
+            [svgIcon]="
+                'layers'
+            "
+        ></mat-icon>
             </button>
         </div>
     </div>

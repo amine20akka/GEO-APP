@@ -48,6 +48,7 @@
         "@tailwindcss/typography": "0.5.13",
         "@types/chroma-js": "2.4.4",
         "@types/crypto-js": "4.2.2",
+        "@types/geojson": "^7946.0.14",
         "@types/highlight.js": "10.1.0",
         "@types/jasmine": "5.1.4",
         "@types/lodash": "4.17.4",

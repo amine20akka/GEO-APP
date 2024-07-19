@@ -11,7 +11,7 @@ export class LayersService {
 
   fetchLayersFromWorkspace(workspace: string) {
     const url = `${this.geoServerUrl}/workspaces/${workspace}/layers`;
-    console.log("url" , url)
+    console.log("url", url);
     return axios.get(url, {
       auth: {
         username: 'admin',
@@ -38,7 +38,4 @@ export class LayersService {
       addLayerCallback(layerName);
     });
   }
-
-  
-  
 }

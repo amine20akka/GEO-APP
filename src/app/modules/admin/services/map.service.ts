@@ -3,11 +3,12 @@ import Map from 'ol/Map';
 import View from 'ol/View';
 import TileLayer from 'ol/layer/Tile';
 import OSM from 'ol/source/OSM';
-import { defaults as defaultControls, ZoomSlider, ZoomToExtent } from 'ol/control';
+import { defaults as defaultControls, FullScreen, MousePosition, Rotate, ScaleLine, ZoomSlider, ZoomToExtent } from 'ol/control';
 import { defaults as defaultInteractions, DblClickDragZoom } from 'ol/interaction';
 import TileWMS from 'ol/source/TileWMS';
 import { XYZ } from 'ol/source';
 import { LayersService } from './layers.service';
+import { createStringXY } from 'ol/coordinate';
 
 @Injectable({
   providedIn: 'root'
@@ -15,10 +16,15 @@ import { LayersService } from './layers.service';
 export class MapService {
   private map!: Map;
   private layers: { [layerName: string]: TileLayer<TileWMS> } = {};
+  private layerOrder: string[] = [];
+  private visibleLayers: Set<string> = new Set();
 
   constructor(private layerService: LayersService) { }
 
   initializeMap(target: string): void {
+    const initialCenter = [1138871.0121687565, 4415980.133146803];
+    const initialZoom = 15;
+  
     this.map = new Map({
       target: target,
       interactions: defaultInteractions().extend([
@@ -26,18 +32,28 @@ export class MapService {
       ]),
       layers: [
         new TileLayer({
-          source: new OSM()
+          source: new OSM({
+            attributions: [] // This hides the map name/attribution
+          })
         })
       ],
       view: new View({
-        center: [1138871.0121687565, 4415980.133146803],
-        zoom: 15,
+        center: initialCenter,
+        zoom: initialZoom,
+        rotation: 0, // Add this line to enable rotation
       }),
-      controls: defaultControls().extend([
-        new ZoomSlider(),
-        new ZoomToExtent({
-          extent: [-180, -90, 180, 90],
+      controls: defaultControls({
+        zoom: true,
+        attribution: false,
+        rotate: true // Change this to true
+      }).extend([
+        new FullScreen({
+          className: 'ol-full-screen'
         }),
+        new Rotate({
+          className: 'ol-rotate',
+          label: '⟲'
+        })
       ])
     });
   }
@@ -46,41 +62,67 @@ export class MapService {
     return this.map;
   }
 
-  addLayer(layer: TileLayer<TileWMS>): void {
-    if (this.map) {
-      this.map.addLayer(layer);
-    }
-  }
-
   addWMSLayer(layerName: string): void {
-    const wmsLayer = new TileLayer({
-      source: new TileWMS({
-        url: 'http://localhost:8080/geoserver/test_data/wms',
-        params: {
-          'SERVICE': 'WMS',
-          'VERSION': '1.1.0',
-          'REQUEST': 'GetMap',
-          'LAYERS': layerName,
-          'STYLES': '',
-          'SRS': 'EPSG:4326',
-          'FORMAT': 'image/png'
-        },
-        serverType: 'geoserver'
-      })
-    });
+    if (!this.layers[layerName]) {
+      const wmsLayer = new TileLayer({
+        source: new TileWMS({
+          url: 'http://localhost:8080/geoserver/test_data/wms',
+          params: {
+            'SERVICE': 'WMS',
+            'VERSION': '1.1.0',
+            'REQUEST': 'GetMap',
+            'LAYERS': layerName,
+            'STYLES': '',
+            'SRS': 'EPSG:4326',
+            'FORMAT': 'image/png'
+          },
+          serverType: 'geoserver'
+        })
+      });
 
-    this.addLayer(wmsLayer);
-    this.layers[layerName] = wmsLayer; // Store the layer
+      this.layers[layerName] = wmsLayer;
+      if (!this.layerOrder.includes(layerName)) {
+        this.layerOrder.push(layerName);
+      }
+      this.visibleLayers.add(layerName);
+      this.map.addLayer(wmsLayer);
+      this.updateLayerZIndex();
+    } else {
+      this.visibleLayers.add(layerName);
+      this.layers[layerName].setVisible(true);
+    }
   }
 
   removeWMSLayer(layerName: string): void {
     if (this.layers[layerName]) {
-      this.map.removeLayer(this.layers[layerName]);
-      delete this.layers[layerName];
-      console.log(`Removed layer: ${layerName}`);
-    } else {
-      console.warn(`Layer '${layerName}' not found or already removed.`);
+      this.visibleLayers.delete(layerName);
+      this.layers[layerName].setVisible(false);
+      this.updateLayerZIndex();
     }
+  }
+
+  private updateLayerZIndex(): void {
+    this.layerOrder.forEach((layerName, index) => {
+      const layer = this.layers[layerName];
+      if (layer) {
+        const zIndex = this.layerOrder.length - index;
+        layer.setZIndex(zIndex);
+        layer.setVisible(this.visibleLayers.has(layerName));
+      }
+    });
+  }
+
+  reorderLayers(newOrder: {name: string, zIndex: number}[]): void {
+    this.layerOrder = newOrder.map(layer => layer.name);
+    this.updateLayerZIndex();
+  }
+
+  getLayerOrder(): string[] {
+    return [...this.layerOrder];
+  }
+
+  isLayerVisible(layerName: string): boolean {
+    return this.visibleLayers.has(layerName);
   }
 
   onBackgroundChange(selectedValue: string): void {
@@ -92,34 +134,30 @@ export class MapService {
     });
   
     // Add background layer based on selected value
+    let backgroundLayer: TileLayer<OSM | XYZ>;
     switch (selectedValue) {
       case 'osm':
-        this.map.addLayer(new TileLayer({
-          source: new OSM()
-        }));
+        backgroundLayer = new TileLayer({ source: new OSM() });
         break;
       case 'satellite':
-        this.map.addLayer(new TileLayer({
+        backgroundLayer = new TileLayer({
           source: new XYZ({
             url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'
           })
-        }));
+        });
         break;
       case 'topographic':
-        this.map.addLayer(new TileLayer({
+        backgroundLayer = new TileLayer({
           source: new XYZ({
             url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}'
           })
-        }));
+        });
         break;
       default:
-        break;
+        return;
     }
-  
-    // Fetch and add WMS layers from GeoServer
-    // this.layerService.fetchLayersFromWorkspace('test_data').then(data => {
-    //   this.layerService.processWorkspaceLayersData(data, this.addWMSLayer.bind(this));
-    // });
+    
+    backgroundLayer.setZIndex(0);
+    this.map.addLayer(backgroundLayer);
   }
-  
 }

@@ -18,6 +18,13 @@ export interface Chat {
 export interface Layer {
     name?: string;
     href?: string;
+    isClicked: boolean;
+    zIndex: number;
+    opacity: number;
+    color: string;
+
+
+    
     
 }
 

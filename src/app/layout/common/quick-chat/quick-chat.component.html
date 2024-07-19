@@ -72,185 +72,115 @@
             >
                 <div class="flex-auto">
                     
-                    @for (layer of layers; track trackByFn($index, layer)) {
-                        <div
-                            class="flex cursor-pointer items-center px-4 py-3"
-                            [ngClass]="{
-                                'dark:hover:bg-hover hover:bg-gray-100':
-                                    !selectedLayer || selectedLayer.name !== layer.name,
-                                'bg-primary-50 dark:bg-hover':
-                                    selectedLayer && selectedLayer.name === layer.name
-                            }"
-                            (click)="selectLayer(layer)"
-                            draggable="true"
-         (dragstart)="onDragStart($event, i)"
-         (dragover)="onDragOver($event)"
-         (drop)="onDrop($event)"
-                        >
-                            
-                            <div class="flex h-full w-full items-center justify-center rounded-full bg-gray-200 text-lg uppercase text-gray-600 dark:bg-gray-700 dark:text-gray-200">{{ layer.name.charAt(0) }}</div>
-                        </div>
-                    }
+                    <div class="flex-auto">
+        @for (layer of layers; track trackByFn($index, layer); let i = $index) {
+            <div
+                class="relative"
+                [attr.data-index]="i"
+            >
+                <div
+                    class="h-2 w-full transition-all duration-200 ease-in-out"
+                    [ngClass]="{'bg-blue-200 h-4': draggedOverIndex === i}"
+                ></div>
+                <div
+                    class="flex cursor-move items-center px-4 py-3 transition-all duration-200 ease-in-out"
+                    [ngClass]="{
+                        'hover:bg-gray-100 dark:hover:bg-gray-700': !selectedLayer || selectedLayer.name !== layer.name,
+                        'bg-primary-50 dark:bg-gray-600': selectedLayer && selectedLayer.name === layer.name,
+                        'opacity-50': draggedIndex === i
+                    }"
+                    (click)="selectLayer(layer)"
+    draggable="true"
+    (dragstart)="onDragStart($event, i)"
+    (dragend)="onDragEnd($event)"
+    (dragover)="onDragOver($event, i)"
+    (dragleave)="onDragLeave()"
+    (drop)="onDrop($event, i)"
+                >
+                    <div class="flex h-10 w-10 items-center justify-center rounded-full bg-gray-200 text-lg font-semibold uppercase text-gray-600 dark:bg-gray-700 dark:text-gray-200 shadow-sm">
+                        {{ layer.name.charAt(0) }}
+                    </div>
                 </div>
+            </div>
+        }
+    </div>
+                </div>
+                
+                <button mat-icon-button
+    class="absolute bottom-4 right-4 bg-red-500 text-white"
+    [ngClass]="{'hidden': !isDragging}"
+    (dragover)="onDragOverDelete($event)"
+    (dragleave)="onDragLeaveDelete($event)"
+    (drop)="onDropDelete($event)"
+>
+    <mat-icon>delete</mat-icon>
+</button>
             </div>
 
             <!-- layer management -->
-            <div
-                class="flex flex-auto flex-col overflow-hidden border-l bg-gray-50 dark:bg-transparent"
-            >
+            <div class="flex flex-auto flex-col overflow-hidden border-l bg-gray-50 dark:bg-transparent">
                 @if (selectedLayer) {
-                    <div
-                        class="flex flex-col-reverse overflow-y-auto overscroll-y-contain"
-                    >
-                        <div class="flex flex-auto shrink flex-col p-6">
-                            @for (
-                                message of chat.messages;
-                                track trackByFn(i, message);
-                                let i = $index;
-                                let first = $first;
-                                let last = $last
-                            ) {
-                                <!-- Start of the day -->
-                                @if (
-                                    first ||
-                                    (chat.messages[i - 1].createdAt
-                                        | date: 'd') !==
-                                        (message.createdAt | date: 'd')
-                                ) {
-                                    <div
-                                        class="-mx-6 my-3 flex items-center justify-center"
-                                    >
-                                        <div class="flex-auto border-b"></div>
-                                        <div
-                                            class="text-secondary mx-4 flex-0 text-sm font-medium leading-5"
-                                        >
-                                            {{
-                                                message.createdAt
-                                                    | date: 'longDate'
-                                            }}
-                                        </div>
-                                        <div class="flex-auto border-b"></div>
+                    <div class="flex flex-col h-full">
+                        <!-- Map Display -->
+                        <div class="flex-1 p-4">
+                            <div>Layer Visualizer</div>
+                            <div>
+                                <p>Name: {{ selectedLayer.name }}</p>
+                                <p>Opacity: {{ selectedLayer.opacity | percent }}</p>
+                                <p>Color: {{ selectedLayer.color }}</p>
+                                <!-- Add other properties as needed -->
+                            </div>
+                        </div>
+                
+                        <!-- Horizontal Menu and Controls -->
+                        <div class="flex flex-col bg-gray-50 dark:bg-gray-800 p-4">
+                            <!-- Tabs -->
+                            <ul class="flex border-b">
+                                <li class="mr-1">
+                                    <a class="bg-white inline-block py-2 px-4 text-blue-500 hover:text-blue-800 font-semibold" (click)="setActiveTab('color')">Color</a>
+                                </li>
+                                <li class="mr-1">
+                                    <a class="bg-white inline-block py-2 px-4 text-blue-500 hover:text-blue-800 font-semibold"  (click)="setActiveTab('opacity')">Opacity</a>
+                                </li>
+                            </ul>
+                
+                            <!-- Tab Content -->
+                            <div class="py-4">
+                                <!-- Color Picker -->
+                                @if (activeTab === 'color') {
+                                    <div class="color-picker-container">
+                                        <app-advanced-color-picker 
+                                            [(color)]="selectedLayer.color"
+                                            (colorChange)="updateLayerColor($event)">
+                                        </app-advanced-color-picker>
                                     </div>
                                 }
-                                <div
-                                    class="flex flex-col"
-                                    [ngClass]="{
-                                        'items-end': message.isMine,
-                                        'items-start': !message.isMine,
-                                        'mt-0.5':
-                                            i > 0 &&
-                                            chat.messages[i - 1].isMine ===
-                                                message.isMine,
-                                        'mt-3':
-                                            i > 0 &&
-                                            chat.messages[i - 1].isMine !==
-                                                message.isMine,
-                                    }"
-                                >
-                                    <!-- Bubble -->
-                                    <div
-                                        class="relative max-w-3/4 rounded-lg px-3 py-2"
-                                        [ngClass]="{
-                                            'bg-blue-500 text-blue-50':
-                                                message.isMine,
-                                            'bg-gray-500 text-gray-50':
-                                                !message.isMine,
-                                        }"
-                                    >
-                                        <!-- Speech bubble tail -->
-                                        @if (
-                                            last ||
-                                            chat.messages[i + 1].isMine !==
-                                                message.isMine
-                                        ) {
-                                            <div
-                                                class="absolute bottom-0 w-3"
-                                                [ngClass]="{
-                                                    '-right-1 -mr-px mb-px text-blue-500':
-                                                        message.isMine,
-                                                    '-left-1 -ml-px mb-px -scale-x-1 text-gray-500':
-                                                        !message.isMine,
-                                                }"
-                                            >
-                                                <ng-container
-                                                    *ngTemplateOutlet="
-                                                        speechBubbleExtension
-                                                    "
-                                                ></ng-container>
-                                            </div>
-                                        }
-                                        <!-- Message -->
-                                        <div
-                                            class="min-w-4 leading-5"
-                                            [innerHTML]="message.value"
-                                        ></div>
-                                    </div>
-                                    <!-- Time -->
-                                    @if (
-                                        first ||
-                                        last ||
-                                        chat.messages[i + 1].isMine !==
-                                            message.isMine ||
-                                        chat.messages[i + 1].createdAt !==
-                                            message.createdAt
-                                    ) {
-                                        <div
-                                            class="text-secondary my-0.5 text-sm font-medium"
-                                            [ngClass]="{
-                                                'mr-3': message.isMine,
-                                                'ml-3': !message.isMine,
-                                            }"
+                
+                                <!-- Opacity Setter -->
+                                @if (activeTab === 'opacity') {
+                                    <div class="opacity-setter-container">
+                                        <input 
+                                            type="range" 
+                                            min="0" 
+                                            max="1" 
+                                            step="0.01" 
+                                            [(ngModel)]="selectedLayer.opacity"
+                                            (input)="updateLayerOpacity($event)"
+                                            class="w-full"
                                         >
-                                            {{
-                                                message.createdAt
-                                                    | date: 'HH:mm'
-                                            }}
+                                        <div class="text-center mt-2">
+                                            Opacity: {{ selectedLayer.opacity | percent }}
                                         </div>
-                                    }
-                                </div>
-                            }
-                        </div>
-                    </div>
-
-                    <!-- selected layer for management component-->
-                    <div
-                        class="flex items-end border-t bg-gray-50 p-4 dark:bg-transparent"
-                    >
-                        <mat-form-field
-                            class="fuse-mat-dense fuse-mat-rounded fuse-mat-bold w-full"
-                            [subscriptSizing]="'dynamic'"
-                        >
-                            <textarea
-                                matInput
-                                cdkTextareaAutosize
-                                #messageInput
-                            ></textarea>
-                        </mat-form-field>
-                        <div class="my-px ml-4 flex h-11 items-center">
-                            <button mat-icon-button>
-                                <mat-icon
-                                    [svgIcon]="
-                                        'heroicons_outline:paper-airplane'
-                                    "
-                                ></mat-icon>
-                            </button>
+                                    </div>
+                                }
+                            </div>
                         </div>
                     </div>
                 }
-                <!-- empty layers -->
                 @else {
-                    <div
-                        class="flex h-full w-full flex-auto flex-col items-center justify-center p-4"
-                    >
-                        <mat-icon
-                            class="icon-size-24"
-                            [svgIcon]="
-                                'layers'
-                            "
-                        ></mat-icon>
-                        <div
-                            class="text-secondary mt-4 text-center text-xl font-medium tracking-tight"
-                        >
+                    <div class="flex h-full w-full flex-auto flex-col items-center justify-center p-4">
+                        <mat-icon class="icon-size-24" [svgIcon]="'layers'"></mat-icon>
+                        <div class="text-secondary mt-4 text-center text-xl font-medium tracking-tight">
                             Select a Layer
                         </div>
                     </div>

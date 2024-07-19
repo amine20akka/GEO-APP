@@ -27,7 +27,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { MatTooltipModule } from '@angular/material/tooltip';
-import { RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { ShortcutsService } from 'app/layout/common/shortcuts/shortcuts.service';
 import { Shortcut } from 'app/layout/common/shortcuts/shortcuts.types';
 import { MapService } from 'app/modules/admin/services/map.service';
@@ -63,6 +63,7 @@ export class ShortcutsComponent implements OnInit, OnDestroy {
     shortcuts: Shortcut[];
     private _overlayRef: OverlayRef;
     private _unsubscribeAll: Subject<any> = new Subject<any>();
+    private embeddedViewRef: any;
 
     constructor(
         private _changeDetectorRef: ChangeDetectorRef,
@@ -70,7 +71,8 @@ export class ShortcutsComponent implements OnInit, OnDestroy {
         private _shortcutsService: ShortcutsService,
         private _overlay: Overlay,
         private _viewContainerRef: ViewContainerRef,
-        private mapService: MapService
+        private mapService: MapService,
+        private _router: Router
     ) {}
 
     onBackgroundChange(selectedValue: string): void {
@@ -148,6 +150,33 @@ export class ShortcutsComponent implements OnInit, OnDestroy {
             new TemplatePortal(this._shortcutsPanel, this._viewContainerRef)
         );
     }
+    navigateToSection(sectionId: string): void {
+        const section = this.shortcuts.find(s => s.id === sectionId);
+        if (section) {
+          if (section.useRouter) {
+            this._router.navigateByUrl(section.link);
+          } else {
+            // Find the element in the DOM
+            const sectionElement = this.embeddedViewRef.rootNodes[0].querySelector(`#shortcut-${sectionId}`);
+            
+            if (sectionElement) {
+              // Scroll to the element
+              sectionElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    
+              // Highlight the element
+              sectionElement.classList.add('highlight-shortcut');
+    
+              // Remove highlight after a few seconds
+              setTimeout(() => {
+                sectionElement.classList.remove('highlight-shortcut');
+              }, 3000);
+    
+              // Force change detection
+              this._changeDetectorRef.detectChanges();
+            }
+          }
+        }
+      }
 
     /**
      * Close the shortcuts panel

@@ -1,4 +1,4 @@
-import { Component, OnDestroy, OnInit, ViewEncapsulation } from '@angular/core';
+import { Component, OnDestroy, OnInit, ViewChild, ViewEncapsulation } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { ActivatedRoute, Router, RouterOutlet } from '@angular/router';
@@ -44,6 +44,8 @@ import { Subject, takeUntil } from 'rxjs';
     ],
 })
 export class ClassyLayoutComponent implements OnInit, OnDestroy {
+    @ViewChild(ShortcutsComponent) shortcutsComponent: ShortcutsComponent;
+
     isScreenSmall: boolean;
     navigation: Navigation;
     user: User;
@@ -115,7 +117,16 @@ export class ClassyLayoutComponent implements OnInit, OnDestroy {
     // -----------------------------------------------------------------------------------------------------
     // @ Public methods
     // -----------------------------------------------------------------------------------------------------
-
+    openShortcuts(): void {
+        if (this.shortcutsComponent) {
+            this.shortcutsComponent.openPanel();
+            
+            // Give the panel a moment to open before navigating to the specific section
+            setTimeout(() => {
+                this.shortcutsComponent.navigateToSection('989ce876-c177-4d71-a749-1953c477f825');
+            }, 100);
+        }
+    }
     /**
      * Toggle navigation
      *

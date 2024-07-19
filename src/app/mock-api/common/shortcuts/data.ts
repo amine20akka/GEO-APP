@@ -51,10 +51,10 @@ export const shortcuts = [
     },
     {
         id: '2496f42e-2f25-4e34-83d5-3ff9568fd984',
-        label: 'Help center',
-        description: 'FAQs and guides',
+        label: 'Layers',
+        description: 'Layer Management',
         icon: 'heroicons_outline:information-circle',
-        link: '/apps/help-center',
+        link: '/dashboards/layerManagement',
         useRouter: true,
         type: 'other',
 

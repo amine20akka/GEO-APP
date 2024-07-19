@@ -19,7 +19,17 @@ quick-chat {
         }
     }
 }
-
+.map-container {
+    width: 100%;
+    height: 100vh;
+    position: relative;
+  }
+  
+  #map {
+    width: 100%;
+    height: 100%;
+  }
+  
 /* Adjustments depending on the selected layout */
 .quick-chat-header {
     height: 64px;
