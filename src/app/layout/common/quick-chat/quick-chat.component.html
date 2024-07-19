@@ -131,7 +131,7 @@
                                 <!-- Add other properties as needed -->
                             </div>
                         </div>
-                
+            
                         <!-- Horizontal Menu and Controls -->
                         <div class="flex flex-col bg-gray-50 dark:bg-gray-800 p-4">
                             <!-- Tabs -->
@@ -143,19 +143,22 @@
                                     <a class="bg-white inline-block py-2 px-4 text-blue-500 hover:text-blue-800 font-semibold"  (click)="setActiveTab('opacity')">Opacity</a>
                                 </li>
                             </ul>
-                
+            
                             <!-- Tab Content -->
                             <div class="py-4">
                                 <!-- Color Picker -->
                                 @if (activeTab === 'color') {
                                     <div class="color-picker-container">
-                                        <app-advanced-color-picker 
-                                            [(color)]="selectedLayer.color"
+                                        <app-color-pie-chart 
+                                            [selectedColor]="selectedLayer.color"
                                             (colorChange)="updateLayerColor($event)">
-                                        </app-advanced-color-picker>
+                                        </app-color-pie-chart>
+                                    </div>
+                                    <div class="mt-2">
+                                        Selected Color: {{ selectedLayer.color || 'None' }}
                                     </div>
                                 }
-                
+            
                                 <!-- Opacity Setter -->
                                 @if (activeTab === 'opacity') {
                                     <div class="opacity-setter-container">
@@ -176,8 +179,7 @@
                             </div>
                         </div>
                     </div>
-                }
-                @else {
+                } @else {
                     <div class="flex h-full w-full flex-auto flex-col items-center justify-center p-4">
                         <mat-icon class="icon-size-24" [svgIcon]="'layers'"></mat-icon>
                         <div class="text-secondary mt-4 text-center text-xl font-medium tracking-tight">

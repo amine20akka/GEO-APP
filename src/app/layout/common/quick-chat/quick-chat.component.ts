@@ -14,6 +14,10 @@ import {
     ViewChild,
     ViewEncapsulation,
 } from '@angular/core';
+import { MatCardModule } from '@angular/material/card';
+import { MatListModule } from '@angular/material/list';
+import { MatTabsModule } from '@angular/material/tabs';
+import { MatSliderModule } from '@angular/material/slider';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -33,6 +37,7 @@ import OSM from 'ol/source/OSM';
 import ImageLayer from 'ol/layer/Image';
 import ImageWMS from 'ol/source/ImageWMS';
 import { MatDialog, MatDialogConfig } from '@angular/material/dialog';
+import { ColorPieChartComponentComponent } from '../color-pie-chart-component/color-pie-chart-component.component';
 
 @Component({
     selector: 'quick-chat',
@@ -51,8 +56,14 @@ import { MatDialog, MatDialogConfig } from '@angular/material/dialog';
         MatInputModule,
         TextFieldModule,
         DatePipe,
+        ColorPieChartComponentComponent,
         FormsModule,
         PercentPipe,
+        MatCardModule,
+    MatListModule,
+    MatTabsModule,
+    MatSliderModule,
+    
     ],
 })
 export class QuickChatComponent implements OnInit, AfterViewInit, OnDestroy {
@@ -93,6 +104,44 @@ export class QuickChatComponent implements OnInit, AfterViewInit, OnDestroy {
             'quick-chat-opened': this.opened,
         };
     }
+
+//     setActiveTab(event: MatTabChangeEvent) {
+//     this.activeTab = event.index === 0 ? 'color' : 'opacity';
+//   }
+
+//   updateLayerColor(color: string) {
+//     this.selectedLayer.color = color;
+//     // Add any additional logic for updating the layer
+//   }
+setActiveTab(tab: 'color' | 'opacity') {
+    this.activeTab = tab;
+  }
+
+  updateLayerColor(color: string) {
+    if (this.selectedLayer) {
+        this.selectedLayer.color = color;
+        console.log('Updated layer color:', color);
+        // If you're using a service to manage layers, update it there as well
+        // this._layersService.updateLayerColor(this.selectedLayer.name, color);
+    }
+}
+
+  updateLayerOpacity(event: Event) {
+    const opacity = (event.target as HTMLInputElement).value;
+    if (this.selectedLayer) {
+      this.selectedLayer.opacity = parseFloat(opacity);
+      // Add any additional logic for updating the layer
+      console.log('Updated layer opacity:', this.selectedLayer.opacity);
+    }
+  }
+//   updateLayerOpacity(opacity: number) {
+//     this.selectedLayer.opacity = opacity;
+//     // Add any additional logic for updating the layer
+//   }
+
+  formatOpacity(value: number): string {
+    return `${(value * 100).toFixed(0)}%`;
+  }
 
     ngOnInit(): void {
         this.fetchLayers();
@@ -146,12 +195,12 @@ export class QuickChatComponent implements OnInit, AfterViewInit, OnDestroy {
             );
     }
 
-    updateLayerOpacity(event: any): void {
+    // updateLayerOpacity(event: any): void {
         
-        if (this.selectedLayer) {
-            this.selectedLayer.opacity = event.target.value;
-        }
-    }
+    //     if (this.selectedLayer) {
+    //         this.selectedLayer.opacity = event.target.value;
+    //     }
+    // }
     addLayer(name: string): void {
         this.layers.push({ name, isClicked: false, zIndex: this.layers.length, opacity: 1, color: '' });
     }
@@ -251,9 +300,9 @@ export class QuickChatComponent implements OnInit, AfterViewInit, OnDestroy {
         this.draggedOverIndex = null;
         this.isDragging = false;  // Add this line to hide the delete button
     }
-setActiveTab(tab: 'color' | 'opacity'): void {
-    this.activeTab = tab;
-}
+// setActiveTab(tab: 'color' | 'opacity'): void {
+//     this.activeTab = tab;
+// }
 
    
     ngAfterViewInit(): void {

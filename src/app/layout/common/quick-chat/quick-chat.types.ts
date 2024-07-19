@@ -16,17 +16,12 @@ export interface Chat {
     }[];
 }
 export interface Layer {
-    name?: string;
-    href?: string;
+    name: string;
     isClicked: boolean;
     zIndex: number;
     opacity: number;
     color: string;
-
-
-    
-    
-}
+  }
 
 export interface Contact {
     id?: string;

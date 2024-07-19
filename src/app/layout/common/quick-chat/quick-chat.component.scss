@@ -63,3 +63,13 @@ quick-chat {
         overflow: hidden;
     }
 }
+.color-picker-container {
+    display: flex;
+    justify-content: center;
+    margin-top: 1rem;
+  }
+  
+  app-color-pie-chart {
+    width: 200px;
+    height: 200px;
+  }
