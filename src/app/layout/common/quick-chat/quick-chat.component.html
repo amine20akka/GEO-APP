@@ -118,73 +118,64 @@
             </div>
 
             <!-- layer management -->
-            <div class="flex flex-auto flex-col overflow-hidden border-l bg-gray-50 dark:bg-transparent">
+            <div class="flex flex-auto flex-col overflow-hidden border-l bg-card">
                 @if (selectedLayer) {
-                    <div class="flex flex-col h-full">
-                        <!-- Map Display -->
-                        <div class="flex-1 p-4">
-                            <div>Layer Visualizer</div>
-                            <div>
-                                <p>Name: {{ selectedLayer.name }}</p>
-                                <p>Opacity: {{ selectedLayer.opacity | percent }}</p>
-                                <p>Color: {{ selectedLayer.color }}</p>
-                                <!-- Add other properties as needed -->
-                            </div>
-                        </div>
+                    <mat-card class="m-4">
+                        <mat-card-header>
+                            <mat-card-title>Layer Visualizer</mat-card-title>
+                            <mat-card-subtitle>{{ selectedLayer.name }}</mat-card-subtitle>
+                        </mat-card-header>
+                        <mat-card-content>
+                            <mat-list>
+                                <mat-list-item>
+                                    <span matListItemTitle>Opacity</span>
+                                    <span matListItemLine>{{ selectedLayer.opacity | percent }}</span>
+                                </mat-list-item>
+                                <mat-list-item>
+                                    <span matListItemTitle>Color</span>
+                                    <span matListItemLine>
+                                        <span class="color-preview" [style.background-color]="selectedLayer.color"></span>
+                                        {{ selectedLayer.color || 'None' }}
+                                    </span>
+                                </mat-list-item>
+                            </mat-list>
+                        </mat-card-content>
+                    </mat-card>
             
-                        <!-- Horizontal Menu and Controls -->
-                        <div class="flex flex-col bg-gray-50 dark:bg-gray-800 p-4">
-                            <!-- Tabs -->
-                            <ul class="flex border-b">
-                                <li class="mr-1">
-                                    <a class="bg-white inline-block py-2 px-4 text-blue-500 hover:text-blue-800 font-semibold" (click)="setActiveTab('color')">Color</a>
-                                </li>
-                                <li class="mr-1">
-                                    <a class="bg-white inline-block py-2 px-4 text-blue-500 hover:text-blue-800 font-semibold"  (click)="setActiveTab('opacity')">Opacity</a>
-                                </li>
-                            </ul>
-            
-                            <!-- Tab Content -->
-                            <div class="py-4">
-                                <!-- Color Picker -->
-                                @if (activeTab === 'color') {
-                                    <div class="color-picker-container">
-                                        <app-color-pie-chart 
-                                            [selectedColor]="selectedLayer.color"
-                                            (colorChange)="updateLayerColor($event)">
-                                        </app-color-pie-chart>
-                                    </div>
-                                    <div class="mt-2">
-                                        Selected Color: {{ selectedLayer.color || 'None' }}
-                                    </div>
-                                }
-            
-                                <!-- Opacity Setter -->
-                                @if (activeTab === 'opacity') {
-                                    <div class="opacity-setter-container">
-                                        <input 
-                                            type="range" 
-                                            min="0" 
-                                            max="1" 
-                                            step="0.01" 
-                                            [(ngModel)]="selectedLayer.opacity"
-                                            (input)="updateLayerOpacity($event)"
-                                            class="w-full"
-                                        >
-                                        <div class="text-center mt-2">
-                                            Opacity: {{ selectedLayer.opacity | percent }}
-                                        </div>
-                                    </div>
-                                }
-                            </div>
-                        </div>
-                    </div>
+                    <mat-tab-group mat-stretch-tabs="false" mat-align-tabs="start" class="m-4" animationDuration="0ms">
+                        <mat-tab label="Color">
+                            <ng-template matTabContent>
+                                <div class="p-4">
+                                    <app-color-pie-chart 
+                                        [selectedColor]="selectedLayer.color"
+                                        (colorChange)="updateLayerColor($event)">
+                                    </app-color-pie-chart>
+                                    <mat-form-field class="w-full mt-4">
+                                        <mat-label>Selected Color</mat-label>
+                                        <input matInput [value]="selectedLayer.color || 'None'" readonly>
+                                    </mat-form-field>
+                                </div>
+                            </ng-template>
+                        </mat-tab>
+                        <mat-tab label="Opacity">
+                            <ng-template matTabContent>
+                                <div class="p-4">
+                                    <mat-slider class="w-full" color="primary" [min]="0" [max]="1" [step]="0.01" [discrete]="true">
+                                        <input matSliderThumb [(ngModel)]="selectedLayer.opacity" (input)="updateLayerOpacity($event)">
+                                    </mat-slider>
+                                    <mat-form-field class="w-full mt-4">
+                                        <mat-label>Opacity</mat-label>
+                                        <input matInput [value]="selectedLayer.opacity | percent" readonly>
+                                    </mat-form-field>
+                                </div>
+                            </ng-template>
+                        </mat-tab>
+                    </mat-tab-group>
                 } @else {
                     <div class="flex h-full w-full flex-auto flex-col items-center justify-center p-4">
-                        <mat-icon class="icon-size-24" [svgIcon]="'layers'"></mat-icon>
-                        <div class="text-secondary mt-4 text-center text-xl font-medium tracking-tight">
-                            Select a Layer
-                        </div>
+                        <mat-icon class="text-6xl text-hint" svgIcon="layers"></mat-icon>
+                        <h2 class="mt-4 text-center text-2xl font-medium text-secondary">Select a Layer</h2>
+                        <p class="mt-2 text-center text-hint">Choose a layer from the list to view and edit its properties</p>
                     </div>
                 }
             </div>

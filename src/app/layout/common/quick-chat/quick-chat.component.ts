@@ -176,7 +176,7 @@ setActiveTab(tab: 'color' | 'opacity') {
             })
         });
     }
-
+//output JSON{ sld , ressources}
     fetchLayers(): void {
         const workspace = 'test_data';
         from(this._layersService.fetchLayersFromWorkspace(workspace))

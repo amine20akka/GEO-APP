@@ -7,12 +7,17 @@ import XYZ from 'ol/source/XYZ'; // Import XYZ for satellite and topographic lay
 import { MapService } from '../../services/map.service';
 import { LayersService } from '../../services/layers.service';
 import { TileWMS } from 'ol/source';
+import { MatButtonModule } from '@angular/material/button';
+import { MatIconModule } from '@angular/material/icon';
 
 @Component({
   selector: 'app-pmap',
   templateUrl: './p-map.component.html',
   styleUrls: ['./p-map.component.scss'],
   encapsulation: ViewEncapsulation.None,
+  standalone: true,
+  imports: [MatButtonModule, MatIconModule],
+
 })
 export class PMapComponent implements OnInit, OnDestroy {
   selectedMapSourceId: string = 'osm'; // Default map source

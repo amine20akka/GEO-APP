@@ -9,6 +9,7 @@ import TileWMS from 'ol/source/TileWMS';
 import { XYZ } from 'ol/source';
 import { LayersService } from './layers.service';
 import { createStringXY } from 'ol/coordinate';
+import { Title } from '@angular/platform-browser';
 
 @Injectable({
   providedIn: 'root'
@@ -58,10 +59,27 @@ export class MapService {
     });
   }
 
+//first step
   getMap(): Map | undefined {
     return this.map;
   }
-
+   getFeatureAttributes(layerName) {
+    const url = `http://localhost:8080/geoserver/test_data/wfs?service=WFS&version=1.1.0&request=GetFeature&typeName=${layerName}&outputFormat=application/json`;
+  
+    fetch(url)
+      .then(response => response.json())
+      .then(data => {
+        // Assuming data is GeoJSON format, you can access attributes
+        if (data && data.features && data.features.length > 0) {
+          const attributes = data.features[0].properties;
+          console.log('Feature Attributes:', attributes);
+        }
+      })
+      .catch(error => {
+        console.error('Error fetching feature attributes:', error);
+      });
+  }
+  
   addWMSLayer(layerName: string): void {
     if (!this.layers[layerName]) {
       const wmsLayer = new TileLayer({
@@ -77,8 +95,11 @@ export class MapService {
             'FORMAT': 'image/png'
           },
           serverType: 'geoserver'
-        })
-      });
+        }),
+        
+      },
+      );
+      console.log('layer props' , this.getFeatureAttributes(layerName));
 
       this.layers[layerName] = wmsLayer;
       if (!this.layerOrder.includes(layerName)) {
@@ -87,10 +108,13 @@ export class MapService {
       this.visibleLayers.add(layerName);
       this.map.addLayer(wmsLayer);
       this.updateLayerZIndex();
+      console.log( 'this new layer to add' ,wmsLayer);
     } else {
       this.visibleLayers.add(layerName);
       this.layers[layerName].setVisible(true);
     }
+    console.log('layer props' , this.getFeatureAttributes(layerName));
+
   }
 
   removeWMSLayer(layerName: string): void {
