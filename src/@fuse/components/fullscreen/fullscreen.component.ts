@@ -31,6 +31,7 @@ export class FuseFullscreenComponent {
     @Input() iconTpl: TemplateRef<any>;
     @Input() tooltip: string;
 
+    isFullScreen = false;
     // -----------------------------------------------------------------------------------------------------
     // @ Public methods
     // -----------------------------------------------------------------------------------------------------
@@ -43,6 +44,8 @@ export class FuseFullscreenComponent {
             console.log('Fullscreen is not available in this browser.');
             return;
         }
+
+        this.isFullScreen = !this.isFullScreen;
 
         // Check if the fullscreen is already open
         const fullScreen = this._document.fullscreenElement;

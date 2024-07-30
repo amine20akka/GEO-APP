@@ -1,14 +1,11 @@
-import { Component, Input, OnDestroy, OnInit, ViewEncapsulation } from '@angular/core';
-import Map from 'ol/Map';
-import View from 'ol/View';
-import TileLayer from 'ol/layer/Tile';
-import OSM from 'ol/source/OSM';
-import XYZ from 'ol/source/XYZ'; // Import XYZ for satellite and topographic layers
+import { Component, OnInit, ViewEncapsulation } from '@angular/core';
+import { Layer } from 'ol/layer';
 import { MapService } from '../../services/map.service';
 import { LayersService } from '../../services/layers.service';
-import { TileWMS } from 'ol/source';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
+import Map from 'ol/Map';
+import { Subscription } from 'rxjs';
 
 @Component({
   selector: 'app-pmap',
@@ -19,73 +16,48 @@ import { MatIconModule } from '@angular/material/icon';
   imports: [MatButtonModule, MatIconModule],
 
 })
-export class PMapComponent implements OnInit, OnDestroy {
+export class PMapComponent implements OnInit {
   selectedMapSourceId: string = 'osm'; // Default map source
+  private layersSubscription: Subscription | null = null;
+  private mapStateSubscription: Subscription | null = null;
+  layers: Layer[] = [];
   map: Map;
 
-  constructor(private mapService: MapService, private layersService: LayersService) { }
+  constructor(private _mapService: MapService, private _layersService: LayersService) { }
 
-  ngOnInit(): void {
-    this.mapService.initializeMap('map');
-
-    // Initialize map with default source
-    // this.updateMapBackground(this.selectedMapSourceId);
-
-    // Fetch and add WMS layers from GeoServer
-    // this.layersService.fetchLayersFromWorkspace('test_data').then(data => {
-    //   // this.layersService.processWorkspaceLayersData(data, this.mapService.addWMSLayer.bind(this.mapService));
-    // });
+  async ngOnInit() {
+    this.initializeMap();
+    await this.initializeLayers();
   }
 
   ngOnDestroy(): void {
-    // Clean up any subscriptions or resources here
-    if (this.map) {
-      this.map.setTarget(null);
-    }
+    this.mapStateSubscription.unsubscribe();
+    this.layersSubscription.unsubscribe();
   }
 
-  ngOnChanges(): void {
-    // Respond to changes in selectedMapSourceId
-    if (this.selectedMapSourceId && this.map) {
-      this.updateMapBackground(this.selectedMapSourceId);
-      console.log('on changes Selected value emitted:', this.selectedMapSourceId);
+  private initializeMap() {
+    this.mapStateSubscription = this._mapService.mapState$.subscribe(map => {
+      if (map) {
+        this.map = map;
+      }
+    })
 
-    }
-        // Respond to changes in selectedlayer
-
+    this._mapService.initializeMap('map');
   }
 
-  private updateMapBackground(selectedValue: string): void {
-    // Clear current layers except WMS layers
-    // this.map.getLayers().forEach(layer => {
-    //   if (!(layer instanceof TileLayer && layer.getSource() instanceof TileWMS)) {
-    //     this.map.removeLayer(layer);
-    //   }
-    // });
+  private async initializeLayers() {
+    this.layersSubscription = this._layersService.layers$.subscribe(layers => {
+      this.layers = layers;
+    });
 
-    // Add background layer based on selected value
-    switch (selectedValue) {
-      case 'osm':
-        this.map.addLayer(new TileLayer({
-          source: new OSM()
-        }));
-        break;
-      case 'satellite':
-        this.map.addLayer(new TileLayer({
-          source: new XYZ({
-            url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'
-          })
-        }));
-        break;
-      case 'topographic':
-        this.map.addLayer(new TileLayer({
-          source: new XYZ({
-            url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}'
-          })
-        }));
-        break;
-      default:
-        break;
+    try {
+      await this._layersService.fetchLayersFromWorkspace('test_data');
+      // Add new layers but visibility = false
+      this.layers.forEach(layer => {
+        this.map.addLayer(layer);
+      });
+    } catch (error) {
+      console.error('Error fetching and adding layers:', error);
     }
   }
 }

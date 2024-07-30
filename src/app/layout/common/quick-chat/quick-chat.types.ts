@@ -15,13 +15,6 @@ export interface Chat {
         createdAt?: string;
     }[];
 }
-export interface Layer {
-    name: string;
-    isClicked: boolean;
-    zIndex: number;
-    opacity: number;
-    color: string;
-  }
 
 export interface Contact {
     id?: string;

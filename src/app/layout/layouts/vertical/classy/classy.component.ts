@@ -13,6 +13,8 @@ import { NavigationService } from 'app/core/navigation/navigation.service';
 import { Navigation } from 'app/core/navigation/navigation.types';
 import { UserService } from 'app/core/user/user.service';
 import { User } from 'app/core/user/user.types';
+import { DistanceComponent } from 'app/layout/common/distance/distance.component';
+import { SurfaceComponent } from 'app/layout/common/surface/surface.component';
 import { LanguagesComponent } from 'app/layout/common/languages/languages.component';
 import { MessagesComponent } from 'app/layout/common/messages/messages.component';
 import { NotificationsComponent } from 'app/layout/common/notifications/notifications.component';
@@ -41,6 +43,8 @@ import { Subject, takeUntil } from 'rxjs';
         MessagesComponent,
         RouterOutlet,
         QuickChatComponent,
+        DistanceComponent,
+        SurfaceComponent,
     ],
 })
 export class ClassyLayoutComponent implements OnInit, OnDestroy {
@@ -120,11 +124,6 @@ export class ClassyLayoutComponent implements OnInit, OnDestroy {
     openShortcuts(): void {
         if (this.shortcutsComponent) {
             this.shortcutsComponent.openPanel();
-            
-            // Give the panel a moment to open before navigating to the specific section
-            setTimeout(() => {
-                this.shortcutsComponent.navigateToSection('989ce876-c177-4d71-a749-1953c477f825');
-            }, 100);
         }
     }
     /**

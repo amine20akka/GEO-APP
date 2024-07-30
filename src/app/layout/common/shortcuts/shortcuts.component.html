@@ -1,5 +1,5 @@
 <!-- Shortcuts toggle -->
-<button mat-icon-button (click)="openPanel()" #shortcutsOrigin>
+<button mat-icon-button [matTooltip]="tooltip || 'Ouvrir les raccourcis'" (click)="openPanel()" #shortcutsOrigin>
     <mat-icon [svgIcon]="'heroicons_outline:squares-plus'"></mat-icon>
 </button>
 
@@ -72,7 +72,7 @@
                     <!-- Maps section -->
                     @if (groupShortcuts()['mapRelated']?.length) {
                         <div class="bg-gray-100 dark:bg-gray-800 px-6 py-2 font-medium">
-                            Maps
+                            Fonds
                         </div>
                         <div class="grid grid-flow-row grid-cols-2">
                             @for (shortcut of groupShortcuts()['mapRelated']; track trackByFn($index, shortcut)) {
@@ -127,11 +127,24 @@
                                     
                                     <!-- Normal links -->
                                     @if (!shortcut.useRouter) {
-                                        <a class="flex h-full w-full flex-col items-center justify-center py-6 no-underline"
-                                           [ngClass]="{'pointer-events-none': mode === 'modify'}"
-                                           (click)="onBackgroundChange(shortcut.label)">
-                                            <ng-container *ngTemplateOutlet="linkContent"></ng-container>
-                                        </a>
+                                        @if (shortcut.label === 'Import a layer') {
+                                            <a class="flex h-full w-full flex-col items-center justify-center py-6 no-underline"
+                                               [ngClass]="{
+                                                   'pointer-events-none': mode === 'modify',
+                                                   'cursor-pointer': mode !== 'modify',
+                                                   'cursor-not-allowed': mode === 'modify'
+                                               }"
+                                               (click)="openFileInput()">
+                                                <ng-container *ngTemplateOutlet="linkContent"></ng-container>
+                                            </a>
+                                        }
+                                        @if (shortcut.label == 'Export') {
+                                            <a class="flex h-full w-full flex-col items-center justify-center py-6 no-underline"
+                                               [ngClass]="{'pointer-events-none': mode === 'modify'}"
+                                               (click)="onBackgroundChange(shortcut.label)">
+                                                <ng-container *ngTemplateOutlet="linkContent"></ng-container>
+                                            </a>
+                                            }   
                                     }
                                     <!-- Router links -->
                                     @if (shortcut.useRouter) {

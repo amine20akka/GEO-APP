@@ -5,10 +5,9 @@ import {
     ChangeDetectionStrategy,
     ChangeDetectorRef,
     Component,
-    EventEmitter,
     OnDestroy,
     OnInit,
-    Output,
+    Input,
     TemplateRef,
     ViewChild,
     ViewContainerRef,
@@ -27,11 +26,13 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { MatTooltipModule } from '@angular/material/tooltip';
-import { Router, RouterLink } from '@angular/router';
+import { RouterLink } from '@angular/router';
 import { ShortcutsService } from 'app/layout/common/shortcuts/shortcuts.service';
 import { Shortcut } from 'app/layout/common/shortcuts/shortcuts.types';
 import { MapService } from 'app/modules/admin/services/map.service';
 import { Subject, takeUntil } from 'rxjs';
+import { MatDialogModule } from '@angular/material/dialog';
+import { ImportService } from '../import/import.service';
 
 @Component({
     selector: 'shortcuts',
@@ -41,6 +42,7 @@ import { Subject, takeUntil } from 'rxjs';
     exportAs: 'shortcuts',
     standalone: true,
     imports: [
+        MatDialogModule,
         MatButtonModule,
         MatIconModule,
         MatTooltipModule,
@@ -55,6 +57,7 @@ import { Subject, takeUntil } from 'rxjs';
     ],
 })
 export class ShortcutsComponent implements OnInit, OnDestroy {
+    @Input() tooltip: string;
     @ViewChild('shortcutsOrigin') private _shortcutsOrigin: MatButton;
     @ViewChild('shortcutsPanel') private _shortcutsPanel: TemplateRef<any>;
 
@@ -63,7 +66,6 @@ export class ShortcutsComponent implements OnInit, OnDestroy {
     shortcuts: Shortcut[];
     private _overlayRef: OverlayRef;
     private _unsubscribeAll: Subject<any> = new Subject<any>();
-    private embeddedViewRef: any;
 
     constructor(
         private _changeDetectorRef: ChangeDetectorRef,
@@ -72,14 +74,10 @@ export class ShortcutsComponent implements OnInit, OnDestroy {
         private _overlay: Overlay,
         private _viewContainerRef: ViewContainerRef,
         private mapService: MapService,
-        private _router: Router
+        private importService: ImportService
     ) {}
 
-    onBackgroundChange(selectedValue: string): void {
-        this.mapService.onBackgroundChange(selectedValue);
-        console.log("shortcuts", selectedValue);
-    }
-
+    
     ngOnInit(): void {
         // Initialize the form
         this.shortcutForm = this._formBuilder.group({
@@ -94,13 +92,13 @@ export class ShortcutsComponent implements OnInit, OnDestroy {
 
         // Get the shortcuts
         this._shortcutsService.shortcuts$
-            .pipe(takeUntil(this._unsubscribeAll))
-            .subscribe((shortcuts: Shortcut[]) => {
+        .pipe(takeUntil(this._unsubscribeAll))
+        .subscribe((shortcuts: Shortcut[]) => {
                 this.shortcuts = shortcuts;
                 this._changeDetectorRef.markForCheck();
             });
     }
-
+    
     ngOnDestroy(): void {
         this._unsubscribeAll.next(null);
         this._unsubscribeAll.complete();
@@ -108,7 +106,7 @@ export class ShortcutsComponent implements OnInit, OnDestroy {
             this._overlayRef.dispose();
         }
     }
-
+    
     groupShortcuts(): { [key: string]: Shortcut[] } {
         return this.shortcuts.reduce((groups, shortcut) => {
             const type = shortcut.type || 'other';
@@ -119,24 +117,24 @@ export class ShortcutsComponent implements OnInit, OnDestroy {
             return groups;
         }, { mapRelated: [], other: [] } as { [key: string]: Shortcut[] });
     }
-
+    
     /**
      * On destroy
-
-
+    
+    
     // -----------------------------------------------------------------------------------------------------
     // @ Public methods
     // -----------------------------------------------------------------------------------------------------
-
+    
     /**
      * Open the shortcuts panel
-     */
-    openPanel(): void {
-        // Return if the shortcuts panel or its origin is not defined
-        if (!this._shortcutsPanel || !this._shortcutsOrigin) {
-            return;
+    */
+   openPanel(): void {
+       // Return if the shortcuts panel or its origin is not defined
+       if (!this._shortcutsPanel || !this._shortcutsOrigin) {
+           return;
         }
-
+        
         // Make sure to start in 'view' mode
         this.mode = 'view';
 
@@ -144,39 +142,12 @@ export class ShortcutsComponent implements OnInit, OnDestroy {
         if (!this._overlayRef) {
             this._createOverlay();
         }
-
+        
         // Attach the portal to the overlay
         this._overlayRef.attach(
             new TemplatePortal(this._shortcutsPanel, this._viewContainerRef)
         );
     }
-    navigateToSection(sectionId: string): void {
-        const section = this.shortcuts.find(s => s.id === sectionId);
-        if (section) {
-          if (section.useRouter) {
-            this._router.navigateByUrl(section.link);
-          } else {
-            // Find the element in the DOM
-            const sectionElement = this.embeddedViewRef.rootNodes[0].querySelector(`#shortcut-${sectionId}`);
-            
-            if (sectionElement) {
-              // Scroll to the element
-              sectionElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    
-              // Highlight the element
-              sectionElement.classList.add('highlight-shortcut');
-    
-              // Remove highlight after a few seconds
-              setTimeout(() => {
-                sectionElement.classList.remove('highlight-shortcut');
-              }, 3000);
-    
-              // Force change detection
-              this._changeDetectorRef.detectChanges();
-            }
-          }
-        }
-      }
 
     /**
      * Close the shortcuts panel
@@ -184,33 +155,33 @@ export class ShortcutsComponent implements OnInit, OnDestroy {
     closePanel(): void {
         this._overlayRef.detach();
     }
-
+    
     /**
      * Change the mode
-     */
-    changeMode(mode: 'view' | 'modify' | 'add' | 'edit'): void {
-        // Change the mode
-        this.mode = mode;
+    */
+   changeMode(mode: 'view' | 'modify' | 'add' | 'edit'): void {
+       // Change the mode
+       this.mode = mode;
     }
 
     /**
      * Prepare for a new shortcut
-     */
+    */
     newShortcut(): void {
         // Reset the form
         this.shortcutForm.reset();
-
+        
         // Enter the add mode
         this.mode = 'add';
     }
 
     /**
      * Edit a shortcut
-     */
+    */
     editShortcut(shortcut: Shortcut): void {
         // Reset the form with the shortcut
         this.shortcutForm.reset(shortcut);
-
+        
         // Enter the edit mode
         this.mode = 'edit';
     }
@@ -254,15 +225,23 @@ export class ShortcutsComponent implements OnInit, OnDestroy {
      *
      * @param index
      * @param item
-     */
+    */
     trackByFn(index: number, item: any): any {
         return item.id || index;
     }
+    
+    onBackgroundChange(selectedValue: string): void {
+        this.mapService.onBackgroundChange(selectedValue);
+    }
 
+    openFileInput() : void {
+        this.importService.openFileInput();
+        this.closePanel();
+    }
     // -----------------------------------------------------------------------------------------------------
     // @ Private methods
     // -----------------------------------------------------------------------------------------------------
-
+    
     /**
      * Create the overlay
      */

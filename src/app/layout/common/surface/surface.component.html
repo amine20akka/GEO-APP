@@ -1,0 +1,9 @@
+@if (!this.isMeasuring) {
+    <button mat-icon-button (click)="startSurfaceMeasure()" [matTooltip]="tooltip || 'Mesurer une surface'">
+        <mat-icon>square_foot</mat-icon>
+    </button>
+} @else {
+    <button mat-icon-button (click)="clearMeasurement()" [matTooltip]="tooltip || 'Annuler'">
+        <mat-icon [svgIcon]="'heroicons_outline:x-mark'"></mat-icon>
+    </button>
+}

@@ -1,187 +1,141 @@
-<div
-    class="fixed bottom-0 top-0 w-full sm:w-96 lg:sticky lg:left-full lg:h-screen lg:w-16 lg:shadow"
->
-    <div
-        class="bg-card flex h-full w-full flex-col transition-transform duration-400 ease-drawer sm:w-96"
-        [ngClass]="{
+<div class="fixed bottom-0 top-0 w-full sm:w-96 lg:sticky lg:left-full lg:h-screen lg:w-16 lg:shadow">
+    <div class="bg-card flex h-full w-full flex-col transition-transform duration-400 ease-drawer sm:w-96" [ngClass]="{
             '-translate-x-full shadow sm:-translate-x-96 lg:-translate-x-80':
                 opened,
             'translate-x-0': !opened,
-        }"
-    >
+        }">
         <!-- Header -->
-        <div
-            class="quick-chat-header flex flex-0 cursor-pointer items-center justify-start"
-            (click)="toggle()"
-        >
+        <div class="quick-chat-header flex flex-0 cursor-pointer items-center justify-start" (click)="toggle()">
             <!-- Toggle -->
             @if (!opened || (opened && !selectedLayer)) {
-                <div class="flex flex-auto items-center justify-center">
-                    <div class="flex w-16 flex-0 items-center justify-center">
-                        <mat-icon
-                            class="icon-size-6"
-                            [svgIcon]="
+            <div class="flex flex-auto items-center justify-center">
+                <div class="flex w-16 flex-0 items-center justify-center">
+                    <mat-icon class="icon-size-6" [svgIcon]="
                                 'layers'
-                            "
-                        ></mat-icon>
-                    </div>
-                    <div class="text-secondary text-lg font-medium">
-                        Layers
-                    </div>
-                    <button class="ml-auto mr-4" mat-icon-button>
-                        <mat-icon
-                            [svgIcon]="'heroicons_outline:x-mark'"
-                        ></mat-icon>
-                    </button>
+                            "></mat-icon>
                 </div>
+                <div class="text-secondary text-lg font-medium">
+                    Layers
+                </div>
+                <button class="ml-auto mr-4" mat-icon-button>
+                    <mat-icon [svgIcon]="'heroicons_outline:x-mark'"></mat-icon>
+                </button>
+            </div>
             }
 
             <!-- layer info -->
             @if (opened && selectedLayer) {
-                <div class="ml-3 flex flex-auto items-center">
+            <div class="ml-3 flex flex-auto items-center">
+                <div class="relative flex h-10 w-10 flex-0 items-center justify-center">
+
                     <div
-                        class="relative flex h-10 w-10 flex-0 items-center justify-center"
-                    >
-                        
-                            <div
-                                class="flex h-full w-full items-center justify-center rounded-full bg-gray-200 text-lg uppercase text-gray-600 dark:bg-gray-700 dark:text-gray-200"
-                            >
-                                {{ selectedLayer.name.charAt(0) }}
-                            </div>
-                        
+                        class="flex h-full w-full items-center justify-center rounded-full bg-gray-200 text-lg uppercase text-gray-600 dark:bg-gray-700 dark:text-gray-200">
+                        {{ selectedLayer.get('name').charAt(0) }}
                     </div>
-                    <div class="ml-4 truncate text-lg font-medium leading-5">
-                        {{ selectedLayer.name }}
-                    </div>
-                    <button class="ml-auto mr-4" mat-icon-button>
-                        <mat-icon
-                            [svgIcon]="'heroicons_outline:x-mark'"
-                        ></mat-icon>
-                    </button>
+
                 </div>
+                <div class="ml-4 truncate text-lg font-medium leading-5">
+                    {{ selectedLayer.get('name') }}
+                </div>
+                <button class="ml-auto mr-4" mat-icon-button>
+                    <mat-icon [svgIcon]="'heroicons_outline:x-mark'"></mat-icon>
+                </button>
+            </div>
             }
         </div>
 
         <!-- Content -->
         <div class="flex flex-auto overflow-hidden border-t">
             <!-- layers list -->
-            <div
-                class="h-full w-16 flex-0 overflow-y-auto overscroll-y-contain sm:overflow-hidden sm:overscroll-auto"
-                fuseScrollbar
-                [fuseScrollbarOptions]="{ wheelPropagation: false }"
-            >
+            <div class="h-full w-16 flex-0 overflow-y-auto overscroll-y-contain sm:overflow-hidden sm:overscroll-auto"
+                fuseScrollbar [fuseScrollbarOptions]="{ wheelPropagation: false }">
                 <div class="flex-auto">
-                    
+
                     <div class="flex-auto">
-        @for (layer of layers; track trackByFn($index, layer); let i = $index) {
-            <div
-                class="relative"
-                [attr.data-index]="i"
-            >
-                <div
-                    class="h-2 w-full transition-all duration-200 ease-in-out"
-                    [ngClass]="{'bg-blue-200 h-4': draggedOverIndex === i}"
-                ></div>
-                <div
-                    class="flex cursor-move items-center px-4 py-3 transition-all duration-200 ease-in-out"
-                    [ngClass]="{
-                        'hover:bg-gray-100 dark:hover:bg-gray-700': !selectedLayer || selectedLayer.name !== layer.name,
-                        'bg-primary-50 dark:bg-gray-600': selectedLayer && selectedLayer.name === layer.name,
+                        @for (layer of layers; track trackByFn($index, layer); let i = $index) {
+                        <div class="relative" [attr.data-index]="i">
+                            <div class="h-2 w-full transition-all duration-200 ease-in-out"
+                                [ngClass]="{'bg-blue-200 h-4': draggedOverIndex === i}"></div>
+                            <div class="flex cursor-pointer items-center px-4 py-3 transition-all duration-200 ease-in-out"
+                                [ngClass]="{
+                        'hover:bg-gray-100 dark:hover:bg-gray-700': !selectedLayer || selectedLayer.get('name') !== layer.get('name'),
+                        'bg-primary-50 dark:bg-gray-600': selectedLayer && selectedLayer.get('name') === layer.get('name'),
                         'opacity-50': draggedIndex === i
-                    }"
-                    (click)="selectLayer(layer)"
-    draggable="true"
-    (dragstart)="onDragStart($event, i)"
-    (dragend)="onDragEnd($event)"
-    (dragover)="onDragOver($event, i)"
-    (dragleave)="onDragLeave()"
-    (drop)="onDrop($event, i)"
-                >
-                    <div class="flex h-10 w-10 items-center justify-center rounded-full bg-gray-200 text-lg font-semibold uppercase text-gray-600 dark:bg-gray-700 dark:text-gray-200 shadow-sm">
-                        {{ layer.name.charAt(0) }}
+                    }" (click)="selectedLayer = layer" draggable="true" (click)="onLayerVisibilityChange(layer)">
+                                <div
+                                    class="flex h-10 w-10 items-center justify-center rounded-full bg-gray-200 text-xs uppercase text-gray-600 dark:bg-gray-700 dark:text-gray-200 shadow-sm">
+                                    {{ layer.get('name') }}
+                                </div>
+                            </div>
+                        </div>
+                        }
                     </div>
                 </div>
-            </div>
-        }
-    </div>
-                </div>
-                
-                <button mat-icon-button
-    class="absolute bottom-4 right-4 bg-red-500 text-white"
-    [ngClass]="{'hidden': !isDragging}"
-    (dragover)="onDragOverDelete($event)"
-    (dragleave)="onDragLeaveDelete($event)"
-    (drop)="onDropDelete($event)"
->
-    <mat-icon>delete</mat-icon>
-</button>
             </div>
 
             <!-- layer management -->
             <div class="flex flex-auto flex-col overflow-hidden border-l bg-card">
                 @if (selectedLayer) {
-                    <mat-card class="m-4">
-                        <mat-card-header>
-                            <mat-card-title>Layer Visualizer</mat-card-title>
-                            <mat-card-subtitle>{{ selectedLayer.name }}</mat-card-subtitle>
-                        </mat-card-header>
-                        <mat-card-content>
-                            <mat-list>
-                                <mat-list-item>
-                                    <span matListItemTitle>Opacity</span>
-                                    <span matListItemLine>{{ selectedLayer.opacity | percent }}</span>
-                                </mat-list-item>
-                                <mat-list-item>
-                                    <span matListItemTitle>Color</span>
-                                    <span matListItemLine>
-                                        <span class="color-preview" [style.background-color]="selectedLayer.color"></span>
-                                        {{ selectedLayer.color || 'None' }}
-                                    </span>
-                                </mat-list-item>
-                            </mat-list>
-                        </mat-card-content>
-                    </mat-card>
-            
-                    <mat-tab-group mat-stretch-tabs="false" mat-align-tabs="start" class="m-4" animationDuration="0ms">
-                        <mat-tab label="Color">
-                            <ng-template matTabContent>
-                                <div class="p-4">
-                                    <app-color-pie-chart 
-                                        [selectedColor]="selectedLayer.color"
-                                        (colorChange)="updateLayerColor($event)">
-                                    </app-color-pie-chart>
-                                    <mat-form-field class="w-full mt-4">
-                                        <mat-label>Selected Color</mat-label>
-                                        <input matInput [value]="selectedLayer.color || 'None'" readonly>
-                                    </mat-form-field>
-                                </div>
-                            </ng-template>
-                        </mat-tab>
-                        <mat-tab label="Opacity">
-                            <ng-template matTabContent>
-                                <div class="p-4">
-                                    <mat-slider class="w-full" color="primary" [min]="0" [max]="1" [step]="0.01" [discrete]="true">
-                                        <input matSliderThumb [(ngModel)]="selectedLayer.opacity" (input)="updateLayerOpacity($event)">
-                                    </mat-slider>
-                                    <mat-form-field class="w-full mt-4">
-                                        <mat-label>Opacity</mat-label>
-                                        <input matInput [value]="selectedLayer.opacity | percent" readonly>
-                                    </mat-form-field>
-                                </div>
-                            </ng-template>
-                        </mat-tab>
-                    </mat-tab-group>
+                <mat-card class="m-4">
+                    <mat-card-header>
+                        <mat-card-title>{{ selectedLayer.get('name') }}</mat-card-title>
+                    </mat-card-header>
+                    <mat-card-content>
+                        <mat-list>
+                            <mat-list-item>
+                                <span matListItemTitle>Opacity</span>
+                                <span matListItemLine>{{ selectedLayer.get('opacity') | percent }}</span>
+                            </mat-list-item>
+                            <mat-list-item>
+                                <span matListItemTitle>Color</span>
+                                <span matListItemLine>
+                                    <span class="color-preview"
+                                        [style.background-color]="selectedLayer.get('color')"></span>
+                                    {{ selectedLayer.get('color') || 'None' }}
+                                </span>
+                            </mat-list-item>
+                        </mat-list>
+                    </mat-card-content>
+                </mat-card>
+
+                <mat-tab-group mat-stretch-tabs="false" mat-align-tabs="start" class="m-4" animationDuration="0ms">
+                    <mat-tab label="Color">
+                        <ng-template matTabContent>
+                            <div class="p-4">
+                                <app-color-pie-chart [selectedColor]="selectedLayer.get('color')"
+                                    (colorChange)="updateLayerColor($event)">
+                                </app-color-pie-chart>
+                                <mat-form-field class="w-full mt-4">
+                                    <mat-label>Selected Color</mat-label>
+                                    <input matInput [value]="selectedLayer.get('color') || 'None'" readonly>
+                                </mat-form-field>
+                            </div>
+                        </ng-template>
+                    </mat-tab>
+                    <mat-tab label="Opacity">
+                        <ng-template matTabContent>
+                            <div class="p-4">
+                                <mat-slider class="w-full" color="primary" [min]="0" [max]="1" [step]="0.01"
+                                    [discrete]="true">
+                                    <input matSliderThumb (input)="updateLayerOpacity($event)">
+                                </mat-slider>
+                                <mat-form-field class="w-full mt-4">
+                                    <mat-label>Opacity</mat-label>
+                                    <input matInput [value]="selectedLayer.get('opacity') | percent" readonly>
+                                </mat-form-field>
+                            </div>
+                        </ng-template>
+                    </mat-tab>
+                </mat-tab-group>
                 } @else {
-                    <div class="flex h-full w-full flex-auto flex-col items-center justify-center p-4">
-                        <mat-icon class="text-6xl text-hint" svgIcon="layers"></mat-icon>
-                        <h2 class="mt-4 text-center text-2xl font-medium text-secondary">Select a Layer</h2>
-                        <p class="mt-2 text-center text-hint">Choose a layer from the list to view and edit its properties</p>
-                    </div>
+                <div class="flex h-full w-full flex-auto flex-col items-center justify-center p-4">
+                    <mat-icon class="text-6xl text-hint" svgIcon="layers"></mat-icon>
+                    <h2 class="mt-4 text-center text-2xl font-medium text-secondary">Select a Layer</h2>
+                    <p class="mt-2 text-center text-hint">Choose a layer from the list to view and edit its properties
+                    </p>
+                </div>
                 }
             </div>
         </div>
     </div>
 </div>
-
-
-

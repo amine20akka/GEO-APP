@@ -2,98 +2,28 @@
 <fuse-loading-bar></fuse-loading-bar>
 
 <!-- Navigation -->
-<fuse-vertical-navigation
-    class="bg-gradient-to-br from-white to-white-300 border border-black border-opacity-5 print:hidden text-black text-center text-md font-medium leading-normal p-4"
-    [mode]="isScreenSmall ? 'over' : 'side'"
-    [name]="'mainNavigation'"
-    [navigation]="navigation.default"
-    [opened]="!isScreenSmall"
->
-    <!-- Navigation header hook -->
-    <ng-container fuseVerticalNavigationContentHeader>
-        <div class="flex w-full items-center p-4 pl-6">
-            <!-- Logo -->
-            <div class="flex items-center justify-center">
-                <!-- <img class="w-8" src="images/logo/logo.svg" /> -->
-            </div>
-            <!-- Components -->
-            <div class="ml-auto flex items-center">
-                <notifications></notifications>
-                <user [showAvatar]="false"></user>
-            </div>
-        </div>
-        <!-- User -->
-        <div class="flex w-full flex-col items-center p-4">
-            <div class="relative h-24 w-24">
-                @if (user.avatar) {
-                    <img
-                        class="h-full w-full rounded-full"
-                        [src]="user.avatar"
-                        alt="User avatar"
-                    />
-                }
-                @if (!user.avatar) {
-                    <mat-icon
-                        class="icon-size-24"
-                        [svgIcon]="'heroicons_solid:user-circle'"
-                    ></mat-icon>
-                }
-            </div>
-            <div class="mt-6 flex w-full flex-col items-center justify-center">
-                <div
-                    class="w-full overflow-hidden text-black whitespace-nowrap text-center font-medium leading-normal"
-                >
-                    Agent
-                </div>
-                <div
-                    class="text-black mt-0.5 w-full overflow-hidden text-ellipsis whitespace-nowrap text-center text-md font-medium leading-normal"
-                >
-                    agentSofrecom.com
-                </div>
-            </div>
-        </div>
-    </ng-container>
-    <!-- Navigation footer hook -->
-    <!-- <ng-container fuseVerticalNavigationContentFooter>
-        <div
-            class="mb-4 mt-2 flex h-16 flex-0 items-center justify-center pl-2 pr-6 opacity-12"
-        >
-            <img class="max-w-36" src="images/logo/logo-text-on-dark.svg" />
-        </div>
-    </ng-container> -->
-</fuse-vertical-navigation>
-
+<!-- Jl'ai enlevé Je dois la chercher à partir d'une autre version -->
+ 
 <!-- Wrapper -->
 <div class="flex w-full min-w-0 flex-auto flex-col">
     <!-- Header -->
     <div
-        class="bg-card relative z-49 flex h-16 w-full flex-0 items-center px-4 shadow dark:border-b dark:bg-transparent dark:shadow-none md:px-6 print:hidden"
-    >
+        class="bg-card relative z-49 flex h-16 w-full flex-0 items-center px-4 shadow dark:border-b dark:bg-transparent dark:shadow-none md:px-6 print:hidden">
         <!-- Navigation toggle button -->
-        <button mat-icon-button (click)="toggleNavigation('mainNavigation')">
+        <!-- <button mat-icon-button (click)="toggleNavigation('mainNavigation')">
             <mat-icon [svgIcon]="'heroicons_outline:bars-3'"></mat-icon>
-        </button>
+        </button> -->
         <!-- Components -->
         <div class="ml-auto flex items-center space-x-0.5 pl-2 sm:space-x-2">
             <!-- <languages></languages> -->
-            <button mat-icon-button (click)="openShortcuts()">
-                <mat-icon [svgIcon]="'heroicons_outline:arrow-down-tray'"></mat-icon>
-            </button>
+            <surface-measure></surface-measure>
+            <distance-measure></distance-measure>
             <fuse-fullscreen class="hidden md:block"></fuse-fullscreen>
-            <search [appearance]="'bar'"></search>
+            <!-- <search [appearance]="'bar'"></search> -->
             <shortcuts></shortcuts>
             <!-- <messages></messages> -->
-            <button
-                class="lg:hidden"
-                mat-icon-button
-                (click)="quickChat.toggle()"
-            >
-            <mat-icon
-            class="icon-size-6"
-            [svgIcon]="
-                'layers'
-            "
-        ></mat-icon>
+            <button class="lg:hidden" mat-icon-button (click)="quickChat.toggle()">
+                <mat-icon class="icon-size-6" [svgIcon]="'layers'"></mat-icon>
             </button>
         </div>
     </div>
@@ -103,7 +33,7 @@
         <!-- *ngIf="true" hack is required here for router-outlet to work correctly.
              Otherwise, layout changes won't be registered and the view won't be updated! -->
         @if (true) {
-            <router-outlet></router-outlet>
+        <router-outlet></router-outlet>
         }
     </div>
 

@@ -1,0 +1,24 @@
+.dialog-actions {
+    gap: 12px;
+  }
+  
+.dialog-content {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.description {
+  margin-bottom: 10px;
+}
+
+.drag-drop-container {
+  border: 2px dashed #ccc;
+  border-radius: 6px;
+  padding: 50px;
+  text-align: center;
+  transition: background-color 0.3s;
+}
+.drag-drop-container.dragover {
+  background-color: #f0f0f0;
+}

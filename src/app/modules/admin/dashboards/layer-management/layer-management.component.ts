@@ -1,5 +1,5 @@
 import { Component, Input } from '@angular/core';
-import { Layer } from 'app/layout/common/quick-chat/quick-chat.types';
+import { Layer } from 'ol/layer';
 
 interface StyleOptions {
   fill?: { color: string; opacity: number; pattern?: string };
