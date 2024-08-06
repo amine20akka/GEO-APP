@@ -83,7 +83,6 @@ export class MapService {
       case 'OSM':
         backgroundLayer = new TileLayer({ 
           source: new OSM(),
-          zIndex: 0,
           properties: { background: true }
         });
         break;
@@ -92,7 +91,6 @@ export class MapService {
           source: new XYZ({
             url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'
           }),
-          zIndex: 0,
           properties: { background: true }
         });
         break;
@@ -101,7 +99,6 @@ export class MapService {
           source: new XYZ({
             url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}'
           }),
-          zIndex: 0,
           properties: { background: true }
         });
         break;
@@ -110,6 +107,7 @@ export class MapService {
         return;
     }
   
+    backgroundLayer.setZIndex(-1);
     this.map.addLayer(backgroundLayer);
   }  
 

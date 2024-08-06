@@ -10,12 +10,12 @@
             @if (!opened || (opened && !selectedLayer)) {
             <div class="flex flex-auto items-center justify-center">
                 <div class="flex w-16 flex-0 items-center justify-center">
-                    <mat-icon class="icon-size-6" [svgIcon]="
-                                'layers'
+                    <mat-icon [matTooltip]="tooltip || 'Couches'" class="icon-size-6" [svgIcon]="
+                                'heroicons_outline:square-3-stack-3d'
                             "></mat-icon>
                 </div>
                 <div class="text-secondary text-lg font-medium">
-                    Layers
+                    Couches
                 </div>
                 <button class="ml-auto mr-4" mat-icon-button>
                     <mat-icon [svgIcon]="'heroicons_outline:x-mark'"></mat-icon>
@@ -30,12 +30,12 @@
 
                     <div
                         class="flex h-full w-full items-center justify-center rounded-full bg-gray-200 text-lg uppercase text-gray-600 dark:bg-gray-700 dark:text-gray-200">
-                        {{ selectedLayer.get('name').charAt(0) }}
+                        {{ selectedLayer.name.charAt(0) }}
                     </div>
 
                 </div>
                 <div class="ml-4 truncate text-lg font-medium leading-5">
-                    {{ selectedLayer.get('name') }}
+                    {{ selectedLayer.name }}
                 </div>
                 <button class="ml-auto mr-4" mat-icon-button>
                     <mat-icon [svgIcon]="'heroicons_outline:x-mark'"></mat-icon>
@@ -49,24 +49,65 @@
             <!-- layers list -->
             <div class="h-full w-16 flex-0 overflow-y-auto overscroll-y-contain sm:overflow-hidden sm:overscroll-auto"
                 fuseScrollbar [fuseScrollbarOptions]="{ wheelPropagation: false }">
-                <div class="flex-auto">
 
-                    <div class="flex-auto">
-                        @for (layer of layers; track trackByFn($index, layer); let i = $index) {
+                <div class="flex-auto">
+                    <!-- Couches GeoServer -->
+                    <div class="mb-2">
+                        <h3
+                            class="text-xs mb-2 py-1 text-center font-semibold tracking-wider text-gray-500 border-b border-gray-200">
+                            Couches GeoServer</h3>
+                        @for (layer of layers | filterLayers:'WFS':'WMS'; track trackByFn($index, layer); let i =
+                        $index) {
                         <div class="relative" [attr.data-index]="i">
-                            <div class="h-2 w-full transition-all duration-200 ease-in-out"
-                                [ngClass]="{'bg-blue-200 h-4': draggedOverIndex === i}"></div>
-                            <div class="flex cursor-pointer items-center px-4 py-3 transition-all duration-200 ease-in-out"
+                            <div class="h-1 w-full transition-all duration-200 ease-in-out"
+                                [ngClass]="{'bg-blue-200 h-2': draggedOverIndex === i}"></div>
+                            <div class="flex justify-center cursor-pointer items-center px-3 py-2 transition-all duration-200 ease-in-out"
                                 [ngClass]="{
-                        'hover:bg-gray-100 dark:hover:bg-gray-700': !selectedLayer || selectedLayer.get('name') !== layer.get('name'),
-                        'bg-primary-50 dark:bg-gray-600': selectedLayer && selectedLayer.get('name') === layer.get('name'),
-                        'opacity-50': draggedIndex === i
-                    }" (click)="selectedLayer = layer" draggable="true" (click)="onLayerVisibilityChange(layer)">
-                                <div
-                                    class="flex h-10 w-10 items-center justify-center rounded-full bg-gray-200 text-xs uppercase text-gray-600 dark:bg-gray-700 dark:text-gray-200 shadow-sm">
-                                    {{ layer.get('name') }}
+                                       'hover:bg-gray-100 dark:hover:bg-gray-700': !selectedLayer || selectedLayer !== layer,
+                                       'bg-primary-50 dark:bg-gray-600': selectedLayer && selectedLayer === layer,
+                                       'opacity-50': draggedIndex === i
+                                     }" (click)="selectedLayer = layer" draggable="true"
+                                (click)="onLayerVisibilityChange(layer.id)">
+                                <div [matTooltip]="tooltip || 'Cliquer pour visualiser'"
+                                    class="flex h-8 w-8 items-center justify-center rounded-full bg-gray-200 text-xs uppercase text-gray-600 dark:bg-gray-700 dark:text-gray-200 shadow-sm">
+                                    {{ layer.name }}
                                 </div>
                             </div>
+                        </div>
+                        }
+                    </div>
+
+                    <!-- Couches importées -->
+                    <div class="mt-4">
+                        <h3
+                            class="text-xs mb-2 py-1 text-center font-semibold tracking-wider text-gray-500 border-b border-t border-gray-200">
+                            Couches importées
+                        </h3>
+                        @if ((layers | filterLayers:'IMPORT').length > 0) {
+                        @for (layer of layers | filterLayers:'IMPORT'; track trackByFn($index, layer); let i = $index) {
+                        <div class="relative" [attr.data-index]="i">
+                            <div class="h-1 w-full transition-all duration-200 ease-in-out"
+                                [ngClass]="{'bg-blue-200 h-2': draggedOverIndex === i}"></div>
+                            <div class="flex justify-center cursor-pointer items-center px-3 py-2 transition-all duration-200 ease-in-out"
+                                [ngClass]="{
+                         'hover:bg-gray-100 dark:hover:bg-gray-700': !selectedLayer || selectedLayer !== layer,
+                         'bg-primary-50 dark:bg-gray-600': selectedLayer && selectedLayer === layer,
+                         'opacity-50': draggedIndex === i
+                     }" (click)="selectedLayer = layer" draggable="true" (click)="onLayerVisibilityChange(layer.id)">
+                                <div [matTooltip]="tooltip || 'Cliquer pour visualiser'"
+                                    class="flex h-8 w-8 py-1 items-center justify-center rounded-full bg-gray-200 text-xs uppercase text-gray-600 dark:bg-gray-700 dark:text-gray-200 shadow-sm">
+                                    {{ layer.name }}
+                                </div>
+                            </div>
+                        </div>
+                        }
+                        } @else {
+                        <div class="flex flex-col justify-center items-center pb-3">
+                            <p class="text-xs justify-center items-center text-center py-2">Importer ici :</p>
+                            <button class="flex rounded-full bg-blue-100" mat-icon-button (click)="openFileInput()"
+                                [matTooltip]="'Importer une couche'">
+                                <mat-icon [svgIcon]="'heroicons_outline:arrow-down-tray'"></mat-icon>
+                            </button>
                         </div>
                         }
                     </div>
@@ -74,24 +115,24 @@
             </div>
 
             <!-- layer management -->
-            <div class="flex flex-auto flex-col overflow-hidden border-l bg-card">
+            <!-- <div class="flex flex-auto flex-col overflow-hidden border-l bg-card">
                 @if (selectedLayer) {
                 <mat-card class="m-4">
                     <mat-card-header>
-                        <mat-card-title>{{ selectedLayer.get('name') }}</mat-card-title>
+                        <mat-card-title>{{ selectedLayer.name }}</mat-card-title>
                     </mat-card-header>
                     <mat-card-content>
                         <mat-list>
                             <mat-list-item>
                                 <span matListItemTitle>Opacity</span>
-                                <span matListItemLine>{{ selectedLayer.get('opacity') | percent }}</span>
+                                <span matListItemLine>{{ selectedLayer.layer.opacity | percent }}</span>
                             </mat-list-item>
                             <mat-list-item>
                                 <span matListItemTitle>Color</span>
                                 <span matListItemLine>
                                     <span class="color-preview"
-                                        [style.background-color]="selectedLayer.get('color')"></span>
-                                    {{ selectedLayer.get('color') || 'None' }}
+                                        [style.background-color]="selectedLayer"></span>
+                                    {{ selectedLayer || 'None' }}
                                 </span>
                             </mat-list-item>
                         </mat-list>
@@ -102,12 +143,12 @@
                     <mat-tab label="Color">
                         <ng-template matTabContent>
                             <div class="p-4">
-                                <app-color-pie-chart [selectedColor]="selectedLayer.get('color')"
+                                <app-color-pie-chart [selectedColor]="selectedLayer"
                                     (colorChange)="updateLayerColor($event)">
                                 </app-color-pie-chart>
                                 <mat-form-field class="w-full mt-4">
                                     <mat-label>Selected Color</mat-label>
-                                    <input matInput [value]="selectedLayer.get('color') || 'None'" readonly>
+                                    <input matInput [value]="selectedLayer || 'None'" readonly>
                                 </mat-form-field>
                             </div>
                         </ng-template>
@@ -121,7 +162,7 @@
                                 </mat-slider>
                                 <mat-form-field class="w-full mt-4">
                                     <mat-label>Opacity</mat-label>
-                                    <input matInput [value]="selectedLayer.get('opacity') | percent" readonly>
+                                    <input matInput [value]="selectedLayer.layer.opacity | percent" readonly>
                                 </mat-form-field>
                             </div>
                         </ng-template>
@@ -135,7 +176,7 @@
                     </p>
                 </div>
                 }
-            </div>
+            </div> -->
         </div>
     </div>
 </div>

@@ -1,27 +1,51 @@
-import { Component } from '@angular/core';
-import { MatDialogActions, MatDialogContent, MatDialogRef } from '@angular/material/dialog';
+import { Component, OnInit } from '@angular/core';
+import { MatDialogActions, MatDialogContent, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
 import { MatIcon } from '@angular/material/icon';
 import Feature from 'ol/Feature';
 import GeoJSON from 'ol/format/GeoJSON';
 import KML from 'ol/format/KML';
 import GPX from 'ol/format/GPX';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatInputModule } from '@angular/material/input';
+import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 
 @Component({
   selector: 'app-import-dialog',
   standalone: true,
   imports: [MatIcon,
     MatDialogContent,
-    MatDialogActions
+    MatDialogActions,
+    ReactiveFormsModule,
+    MatDialogModule,
+    MatFormFieldModule,
+    MatInputModule,
   ],
   templateUrl: './import-dialog.component.html',
   styleUrl: './import-dialog.component.scss'
 })
-export class ImportDialogComponent {
+export class ImportDialogComponent implements OnInit {
+  importForm: FormGroup;
   selectedFile: File | null = null;
   preparedFeatures: Feature[] = [];
   featureProperties: any[] = [];
+  layerName: string = '';
 
-  constructor(public dialogRef: MatDialogRef<ImportDialogComponent>) {}
+  constructor(public dialogRef: MatDialogRef<ImportDialogComponent>, private fb: FormBuilder) {}
+
+  ngOnInit() : void {
+    this.importForm = this.fb.group({
+      layerName: ['', Validators.required]
+    });
+  }
+
+  // Methode pour soumettre le formulaire
+  onSubmit(): void {
+    if (this.importForm.valid) {
+      const layerNameTyped = this.importForm.get('layerName').value;
+      this.layerName = layerNameTyped;
+      this.importFile();
+    }
+  }
 
   onFileSelected(event: Event): void {
     const input = event.target as HTMLInputElement;
@@ -116,8 +140,14 @@ export class ImportDialogComponent {
   }
 
   importFile(): void {
-    if (this.preparedFeatures.length > 0) {
-      this.dialogRef.close(this.preparedFeatures);
+    if (this.preparedFeatures.length > 0 && this.layerName.trim() !== '') {
+      this.dialogRef.close({
+        name: this.layerName,
+        features: this.preparedFeatures,
+      });
+    } else {
+      // Afficher un message d'erreur si le nom de la couche est vide
+      console.error('Le nom de la couche ne peut pas être vide');
     }
     this.selectedFile = null;
   }

@@ -1,10 +1,10 @@
 @if (!isFullScreen) {
     <!-- Default icon -->
-    <button mat-icon-button [matTooltip]="tooltip || 'Toggle Fullscreen'" (click)="toggleFullscreen()">
+    <button mat-icon-button [matTooltip]="tooltip || 'Plein Écran'" (click)="toggleFullscreen()">
         <mat-icon [svgIcon]="'heroicons_outline:arrows-pointing-out'"></mat-icon>    
     </button>
 } @else {
-    <button mat-icon-button [matTooltip]="tooltip || 'Toggle Fullscreen'" (click)="toggleFullscreen()">    
+    <button mat-icon-button [matTooltip]="tooltip || 'Quitter plein écran'" (click)="toggleFullscreen()">    
         <mat-icon [svgIcon]="'heroicons_outline:arrows-pointing-in'"></mat-icon>
     </button>
 }

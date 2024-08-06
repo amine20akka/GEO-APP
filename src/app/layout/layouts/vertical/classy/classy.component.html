@@ -15,23 +15,18 @@
         </button> -->
         <!-- Components -->
         <div class="ml-auto flex items-center space-x-0.5 pl-2 sm:space-x-2">
-            <!-- <languages></languages> -->
             <surface-measure></surface-measure>
             <distance-measure></distance-measure>
-            <fuse-fullscreen class="hidden md:block"></fuse-fullscreen>
-            <!-- <search [appearance]="'bar'"></search> -->
-            <shortcuts></shortcuts>
-            <!-- <messages></messages> -->
-            <button class="lg:hidden" mat-icon-button (click)="quickChat.toggle()">
-                <mat-icon class="icon-size-6" [svgIcon]="'layers'"></mat-icon>
+            <button mat-icon-button (click)="openFileInput()" [matTooltip]="'Importer une couche'">
+                <mat-icon [svgIcon]="'heroicons_outline:arrow-down-tray'"></mat-icon>
             </button>
+            <fuse-fullscreen class="hidden md:block"></fuse-fullscreen>
+            <shortcuts></shortcuts>
         </div>
     </div>
 
     <!-- Content -->
     <div class="flex flex-auto flex-col">
-        <!-- *ngIf="true" hack is required here for router-outlet to work correctly.
-             Otherwise, layout changes won't be registered and the view won't be updated! -->
         @if (true) {
         <router-outlet></router-outlet>
         }

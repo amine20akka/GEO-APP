@@ -1,11 +1,11 @@
-import { Component, OnInit, ViewEncapsulation } from '@angular/core';
-import { Layer } from 'ol/layer';
+import { Component, OnInit, OnDestroy, ViewEncapsulation } from '@angular/core';
 import { MapService } from '../../services/map.service';
 import { LayersService } from '../../services/layers.service';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import Map from 'ol/Map';
 import { Subscription } from 'rxjs';
+import { CustomLayer } from 'app/layout/common/quick-chat/quick-chat.types';
 
 @Component({
   selector: 'app-pmap',
@@ -14,50 +14,54 @@ import { Subscription } from 'rxjs';
   encapsulation: ViewEncapsulation.None,
   standalone: true,
   imports: [MatButtonModule, MatIconModule],
-
 })
-export class PMapComponent implements OnInit {
-  selectedMapSourceId: string = 'osm'; // Default map source
-  private layersSubscription: Subscription | null = null;
-  private mapStateSubscription: Subscription | null = null;
-  layers: Layer[] = [];
-  map: Map;
+export class PMapComponent implements OnInit, OnDestroy {
+  private subscriptions: Subscription = new Subscription();
+  layers: CustomLayer[] = [];
+  map: Map | null = null;
 
-  constructor(private _mapService: MapService, private _layersService: LayersService) { }
+  constructor(private mapService: MapService, private layersService: LayersService) { }
 
-  async ngOnInit() {
+  ngOnInit() {
     this.initializeMap();
-    await this.initializeLayers();
+    this.initializeLayers();
   }
 
   ngOnDestroy(): void {
-    this.mapStateSubscription.unsubscribe();
-    this.layersSubscription.unsubscribe();
+    this.subscriptions.unsubscribe();
   }
 
   private initializeMap() {
-    this.mapStateSubscription = this._mapService.mapState$.subscribe(map => {
-      if (map) {
+    this.mapService.initializeMap('map');
+    
+    this.subscriptions.add(
+      this.mapService.mapState$.subscribe(map => {
         this.map = map;
-      }
-    })
-
-    this._mapService.initializeMap('map');
+      })
+    );
   }
 
-  private async initializeLayers() {
-    this.layersSubscription = this._layersService.layers$.subscribe(layers => {
-      this.layers = layers;
-    });
+  private initializeLayers() {
+    this.subscriptions.add(
+      this.layersService.layers$.subscribe((layers) => {
+        this.layers = layers;
+        this.addLayersToMap();
+      })
+    );
 
-    try {
-      await this._layersService.fetchLayersFromWorkspace('test_data');
-      // Add new layers but visibility = false
-      this.layers.forEach(layer => {
-        this.map.addLayer(layer);
+    this.layersService.fetchLayersFromWorkspace('test_data').catch(error => {
+      console.error('Error fetching layers:', error);
+    });
+  }
+
+  private addLayersToMap() {
+    if (this.map && this.layers.length > 0) {
+      this.layers.forEach(customLayer => {
+        if (!this.map.getLayers().getArray().includes(customLayer.layer)) {
+          this.map.addLayer(customLayer.layer);
+          customLayer.layer.setVisible(false);
+        }
       });
-    } catch (error) {
-      console.error('Error fetching and adding layers:', error);
     }
   }
 }

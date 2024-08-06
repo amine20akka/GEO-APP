@@ -2,12 +2,12 @@ import { ScrollStrategy, ScrollStrategyOptions } from '@angular/cdk/overlay';
 import { TextFieldModule } from '@angular/cdk/text-field';
 import { DatePipe, NgClass, NgTemplateOutlet, PercentPipe } from '@angular/common';
 import {
-    AfterViewInit,
     Component,
     ElementRef,
     HostBinding,
     OnDestroy,
     OnInit,
+    Input,
     Renderer2,
     ViewEncapsulation,
 } from '@angular/core';
@@ -22,12 +22,14 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { FuseScrollbarDirective } from '@fuse/directives/scrollbar';
 import { LayersService } from 'app/modules/admin/services/layers.service';
-import { MapService } from 'app/modules/admin/services/map.service';
 import { Subject, Subscription } from 'rxjs';
 
-import Map from 'ol/Map';
 import { ColorPieChartComponentComponent } from '../color-pie-chart-component/color-pie-chart-component.component';
-import { Layer } from 'ol/layer';
+import { MatTooltipModule } from '@angular/material/tooltip';
+import { CustomLayer } from './quick-chat.types';
+import { FilterLayersPipe } from 'app/modules/admin/filter-layers-pipe/filter-layers.pipe';
+import { ImportService } from '../import/import.service';
+import { StyleService } from 'app/modules/admin/services/style.service';
 
 @Component({
     selector: 'quick-chat',
@@ -53,17 +55,18 @@ import { Layer } from 'ol/layer';
         MatListModule,
         MatTabsModule,
         MatSliderModule,
-
+        MatTooltipModule,
+        FilterLayersPipe,
     ],
 })
-export class QuickChatComponent implements OnInit, AfterViewInit, OnDestroy {
+export class QuickChatComponent implements OnInit, OnDestroy {
+    @Input() tooltip: string;
     opened: boolean = false;
     private layersSubscription: Subscription;
-    layers: Layer[] = [];
-    selectedLayer: Layer;
+    layers: CustomLayer[];
+    selectedLayer: CustomLayer;
     clicked: boolean = false;
     draggedOverIndex: number | null = null;
-    map: Map;
     activeTab: 'color' | 'opacity' = 'color';
     isDragging: boolean = false;
     isOverDelete: boolean = false;
@@ -78,7 +81,8 @@ export class QuickChatComponent implements OnInit, AfterViewInit, OnDestroy {
         private _renderer2: Renderer2,
         private _scrollStrategyOptions: ScrollStrategyOptions,
         private _layersService: LayersService,
-        private _mapService: MapService,
+        private _importService: ImportService,
+        private _styleService: StyleService,
     ) { }
 
     @HostBinding('class') get classList(): any {
@@ -134,9 +138,6 @@ export class QuickChatComponent implements OnInit, AfterViewInit, OnDestroy {
         
     }
     
-    ngAfterViewInit(): void {
-        
-    }
     
     ngOnDestroy(): void {
         this.layersSubscription.unsubscribe();
@@ -145,9 +146,16 @@ export class QuickChatComponent implements OnInit, AfterViewInit, OnDestroy {
         this._unsubscribeAll.complete();
     }
     
-    onLayerVisibilityChange(layer: Layer): void {
-        layer.setVisible(!layer.isVisible());
-        this._layersService.updateLayers(this.layers);
+    onLayerVisibilityChange(layerId: string): void {
+        this._layersService.onLayerVisibilityChange(layerId);
+    }
+
+    // getLegendStyle(style: any) {
+    //     this._styleService.getLegendStyle(style);
+    // }
+
+    openFileInput() : void {
+        this._importService.openFileInput();
     }
     
     open(): void {

@@ -23,6 +23,8 @@ import { SearchComponent } from 'app/layout/common/search/search.component';
 import { ShortcutsComponent } from 'app/layout/common/shortcuts/shortcuts.component';
 import { UserComponent } from 'app/layout/common/user/user.component';
 import { Subject, takeUntil } from 'rxjs';
+import { ImportService } from 'app/layout/common/import/import.service';
+import { MatTooltipModule } from '@angular/material/tooltip';
 
 @Component({
     selector: 'classy-layout',
@@ -36,6 +38,7 @@ import { Subject, takeUntil } from 'rxjs';
         UserComponent,
         MatIconModule,
         MatButtonModule,
+        MatTooltipModule,
         LanguagesComponent,
         FuseFullscreenComponent,
         SearchComponent,
@@ -64,7 +67,8 @@ export class ClassyLayoutComponent implements OnInit, OnDestroy {
         private _navigationService: NavigationService,
         private _userService: UserService,
         private _fuseMediaWatcherService: FuseMediaWatcherService,
-        private _fuseNavigationService: FuseNavigationService
+        private _fuseNavigationService: FuseNavigationService,
+        private _importService: ImportService,
     ) {}
 
     // -----------------------------------------------------------------------------------------------------
@@ -121,6 +125,11 @@ export class ClassyLayoutComponent implements OnInit, OnDestroy {
     // -----------------------------------------------------------------------------------------------------
     // @ Public methods
     // -----------------------------------------------------------------------------------------------------
+    
+    openFileInput() : void {
+        this._importService.openFileInput();
+    }
+    
     openShortcuts(): void {
         if (this.shortcutsComponent) {
             this.shortcutsComponent.openPanel();

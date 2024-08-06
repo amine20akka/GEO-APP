@@ -1,28 +1,28 @@
-<h2 mat-dialog-title class="font-bold font-large">Import a layer</h2>
-<mat-dialog-content class="dialog-content" align="start">
-  <p class="description">Select a file to import. Supported formats: GeoJSON, KML, GML, and GPX.</p>
-
-  <div 
-    class="drag-drop-container" 
-    (dragover)="onDragOver($event)" 
-    (dragleave)="onDragLeave($event)" 
-    (drop)="onDrop($event)"
-  >
-    <div class="grid-flow-row" align="center">
-      @if (selectedFile) {
-        <p>Selected file: {{ selectedFile.name }}</p>
-      } @else {
-        <p>Drag and drop your file here, or</p>
-        <button class="underline font-semibold" mat-stroked-button (click)="fileInput.click()">
-          <mat-icon style="margin-right: 10px;" class="icon-size-4" [svgIcon]="'heroicons_solid:paper-clip'"></mat-icon>
-          Browse your files
-        </button>
-        <input hidden (change)="onFileSelected($event)" #fileInput type="file" accept=".geojson,.kml,.gml,.gpx">
-      }
+<h2 mat-dialog-title class="font-bold font-large">Importer une couche</h2>
+<form [formGroup]="importForm" (ngSubmit)="onSubmit()">
+  <mat-dialog-content class="dialog-content">
+    <p class="description">Sélectionnez un fichier à importer. Formats pris en charge : GeoJSON, KML, GML et GPX.</p>
+    <div class="drag-drop-container" (dragover)="onDragOver($event)" (dragleave)="onDragLeave($event)" (drop)="onDrop($event)">
+      <div class="grid-flow-row">
+        @if (selectedFile) {
+          <p class="selected">Fichier sélectionné : <strong>{{ selectedFile.name }}</strong></p>
+          <mat-form-field appearance="outline">
+            <mat-label>Nom de la couche</mat-label>
+            <input matInput formControlName="layerName" placeholder="Entrez le nom de la couche">
+          </mat-form-field>
+        } @else {
+          <p>Glissez et déposez votre fichier ici, ou</p>
+          <button class="underline font-semibold" mat-stroked-button (click)="fileInput.click()">
+            <mat-icon style="margin-right: 10px;" class="icon-size-4" [svgIcon]="'heroicons_solid:paper-clip'"></mat-icon>
+            Parcourir vos fichiers
+          </button>
+          <input hidden (change)="onFileSelected($event)" #fileInput type="file" accept=".geojson,.kml,.gml,.gpx">
+        }
+      </div>
     </div>
-  </div>
-</mat-dialog-content>
-<mat-dialog-actions align="end" class="dialog-actions">
-  <button mat-button mat-dialog-close (click)="closeDialog()">Cancel</button>
-  <button mat-raised-button color="primary" [disabled]="!selectedFile" (click)="importFile()">Add to Map</button>
-</mat-dialog-actions>
+  </mat-dialog-content>
+  <mat-dialog-actions class="dialog-actions">
+    <button mat-raised-button (click)="closeDialog()">Annuler</button>
+    <button mat-button type="submit" [disabled]="importForm.invalid || !selectedFile" class="font-semibold">Ajouter à la carte</button>
+  </mat-dialog-actions>
+</form>

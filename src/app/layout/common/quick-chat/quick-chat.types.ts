@@ -1,3 +1,7 @@
+import { Layer } from "ol/layer";
+import { Feature } from 'ol';
+import { StyleLike } from 'ol/style/Style';
+
 export interface Chat {
     id?: string;
     contactId?: string;
@@ -42,3 +46,13 @@ export interface Contact {
         links?: any[];
     };
 }
+
+export interface CustomLayer {
+    id: string;
+    name: string;
+    type: 'VECTOR' | 'RASTER';
+    layer: Layer;
+    source: 'WFS' | 'IMPORT' | 'WMS';
+    features: Feature[];
+    style?: StyleLike;
+  }  

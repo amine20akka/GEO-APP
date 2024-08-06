@@ -83,7 +83,7 @@
                                     
                                     <!-- Normal links -->
                                     @if (!shortcut.useRouter) {
-                                        <a class="flex h-full w-full flex-col items-center justify-center py-6 no-underline"
+                                        <a class="flex h-full w-full flex-col items-center justify-center py-6 cursor-pointer"
                                            [ngClass]="{'pointer-events-none': mode === 'modify'}"
                                            (click)="onBackgroundChange(shortcut.label)">
                                             <ng-container *ngTemplateOutlet="linkContent"></ng-container>
