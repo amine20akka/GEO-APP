@@ -152,4 +152,54 @@ export class ClassyLayoutComponent implements OnInit, OnDestroy {
             navigation.toggle();
         }
     }
+    imprimerCarte(): void {
+        // Créer une nouvelle fenêtre pour l'impression
+        const fenetreImpression: Window | null = window.open('', 'Impression Carte', 'height=600,width=800');
+        
+        if (fenetreImpression) {
+          // Récupérer l'élément de la carte
+          const mapElement: HTMLElement | null = document.getElementById('map');
+          
+          if (mapElement) {
+            // Obtenir les dimensions de l'élément de la carte
+            const style = window.getComputedStyle(mapElement);
+            const width = style.width;
+            const height = style.height;
+      
+            // Écrire le contenu HTML dans la nouvelle fenêtre
+            fenetreImpression.document.write(`
+              <html>
+                <head>
+                  <title>Impression Carte</title>
+                  <style>
+                    .map-container {
+                      width: ${width};
+                      height: ${height};
+                      border: 1px solid black;
+                    }
+                  </style>
+                </head>
+                <body>
+                  <div class="map-container"></div>
+                </body>
+              </html>
+            `);
+            
+            fenetreImpression.document.close();
+            fenetreImpression.focus();
+            
+            // Lancer l'impression
+            fenetreImpression.print();
+            
+            // Fermer la fenêtre après l'impression
+            setTimeout(() => {
+              fenetreImpression.close();
+            }, 500);
+          } else {
+            console.error("L'élément de la carte n'a pas été trouvé.");
+          }
+        } else {
+          console.error("Impossible d'ouvrir la fenêtre d'impression.");
+        }
+      }
 }
