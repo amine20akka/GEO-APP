@@ -25,6 +25,9 @@ import { UserComponent } from 'app/layout/common/user/user.component';
 import { Subject, takeUntil } from 'rxjs';
 import { ImportService } from 'app/layout/common/import/import.service';
 import { MatTooltipModule } from '@angular/material/tooltip';
+import { CircleComponent } from 'app/layout/common/circle/circle.component';
+import { MatMenuModule } from '@angular/material/menu';
+import { MapService } from 'app/modules/admin/services/map.service';
 
 @Component({
     selector: 'classy-layout',
@@ -39,6 +42,7 @@ import { MatTooltipModule } from '@angular/material/tooltip';
         MatIconModule,
         MatButtonModule,
         MatTooltipModule,
+        MatMenuModule,
         LanguagesComponent,
         FuseFullscreenComponent,
         SearchComponent,
@@ -48,6 +52,7 @@ import { MatTooltipModule } from '@angular/material/tooltip';
         QuickChatComponent,
         DistanceComponent,
         SurfaceComponent,
+        CircleComponent,
     ],
 })
 export class ClassyLayoutComponent implements OnInit, OnDestroy {
@@ -69,6 +74,7 @@ export class ClassyLayoutComponent implements OnInit, OnDestroy {
         private _fuseMediaWatcherService: FuseMediaWatcherService,
         private _fuseNavigationService: FuseNavigationService,
         private _importService: ImportService,
+        private _mapService: MapService,
     ) {}
 
     // -----------------------------------------------------------------------------------------------------
@@ -128,6 +134,10 @@ export class ClassyLayoutComponent implements OnInit, OnDestroy {
     
     openFileInput() : void {
         this._importService.openFileInput();
+    }
+
+    geolocate() : void {
+        this._mapService.geolocate();
     }
     
     openShortcuts(): void {

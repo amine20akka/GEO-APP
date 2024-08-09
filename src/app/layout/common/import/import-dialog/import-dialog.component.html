@@ -1,5 +1,5 @@
-<h2 mat-dialog-title class="font-bold font-large">Importer une couche</h2>
 <form [formGroup]="importForm" (ngSubmit)="onSubmit()">
+<h2 mat-dialog-title class="font-bold font-large">Importer une couche</h2>
   <mat-dialog-content class="dialog-content">
     <p class="description">Sélectionnez un fichier à importer. Formats pris en charge : GeoJSON, KML, GML et GPX.</p>
     <div class="drag-drop-container" (dragover)="onDragOver($event)" (dragleave)="onDragLeave($event)" (drop)="onDrop($event)">

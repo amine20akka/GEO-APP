@@ -3,9 +3,7 @@ import { MapService } from '../../services/map.service';
 import { LayersService } from '../../services/layers.service';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
-import Map from 'ol/Map';
 import { Subscription } from 'rxjs';
-import { CustomLayer } from 'app/layout/common/quick-chat/quick-chat.types';
 
 @Component({
   selector: 'app-pmap',
@@ -16,9 +14,7 @@ import { CustomLayer } from 'app/layout/common/quick-chat/quick-chat.types';
   imports: [MatButtonModule, MatIconModule],
 })
 export class PMapComponent implements OnInit, OnDestroy {
-  private subscriptions: Subscription = new Subscription();
-  layers: CustomLayer[] = [];
-  map: Map | null = null;
+  private layersSubscription: Subscription;
 
   constructor(private mapService: MapService, private layersService: LayersService) { }
 
@@ -28,40 +24,20 @@ export class PMapComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
-    this.subscriptions.unsubscribe();
+    this.layersSubscription.unsubscribe();
   }
 
   private initializeMap() {
     this.mapService.initializeMap('map');
-    
-    this.subscriptions.add(
-      this.mapService.mapState$.subscribe(map => {
-        this.map = map;
-      })
-    );
   }
 
   private initializeLayers() {
-    this.subscriptions.add(
-      this.layersService.layers$.subscribe((layers) => {
-        this.layers = layers;
-        this.addLayersToMap();
-      })
-    );
+    this.layersSubscription = this.layersService.layers$.subscribe((layers) => {
+        this.mapService.addLayersToMap(layers);
+      });
 
     this.layersService.fetchLayersFromWorkspace('test_data').catch(error => {
       console.error('Error fetching layers:', error);
     });
-  }
-
-  private addLayersToMap() {
-    if (this.map && this.layers.length > 0) {
-      this.layers.forEach(customLayer => {
-        if (!this.map.getLayers().getArray().includes(customLayer.layer)) {
-          this.map.addLayer(customLayer.layer);
-          customLayer.layer.setVisible(false);
-        }
-      });
-    }
   }
 }

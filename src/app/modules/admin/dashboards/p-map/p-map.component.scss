@@ -25,24 +25,6 @@
 .ol-zoom, .ol-full-screen, .ol-rotate {
   position: static;
   margin-bottom: 5px;
-}
-
-.ol-zoom {
-  display: flex;
-  flex-direction: column;
-}
-
-.ol-zoom .ol-zoom-in,
-.ol-zoom .ol-zoom-out {
-  display: block;
-  margin-bottom: 5px;
-}
-
-.ol-full-screen {
-  display: block;
-}
-
-.ol-rotate {
   display: block;
 }
 
@@ -67,4 +49,42 @@
 
 .ol-attribution {
   display: none;
+}
+
+.ol-scale-line {
+  background: transparent; 
+}
+
+.ol-scale-line-inner {
+  display: flex;
+  color: #000;
+  font-weight: bold;
+}
+
+.ol-scale-text {
+  margin-bottom: 3px;
+}
+
+.ol-rotate-control {
+  position: static;
+  margin-bottom: 5px;
+}
+
+.ol-rotate-custom {
+  display: block;
+  background: transparent;
+  color: black;
+  font-size: 18px;
+  font-weight: bold;
+  margin: 2px 0;
+  padding: 0;
+  width: 36px;
+  height: 36px;
+  line-height: 36px;
+  border: none;
+  border-radius: 4px;
+}
+
+.ol-rotate-custom:hover {
+  background: rgba(0, 0, 0, 0.1);
 }

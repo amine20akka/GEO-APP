@@ -1,0 +1,9 @@
+@if (!this.isMeasuring) {
+    <button mat-icon-button (click)="startMeasure()" [matTooltip]="tooltip || 'Mesurer un cercle'">
+        <mat-icon>radio_button_unchecked</mat-icon>
+    </button>
+} @else {
+    <button mat-icon-button (click)="clearMeasurement()" [matTooltip]="tooltip || 'Annuler'">
+        <mat-icon [svgIcon]="'heroicons_outline:x-mark'"></mat-icon>
+    </button>
+}

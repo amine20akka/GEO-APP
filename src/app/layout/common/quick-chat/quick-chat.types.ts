@@ -1,6 +1,6 @@
 import { Layer } from "ol/layer";
 import { Feature } from 'ol';
-import { StyleLike } from 'ol/style/Style';
+import { Style } from "ol/style";
 
 export interface Chat {
     id?: string;
@@ -54,5 +54,5 @@ export interface CustomLayer {
     layer: Layer;
     source: 'WFS' | 'IMPORT' | 'WMS';
     features: Feature[];
-    style?: StyleLike;
+    style?: Style;
   }  

@@ -30,6 +30,8 @@ import { CustomLayer } from './quick-chat.types';
 import { FilterLayersPipe } from 'app/modules/admin/filter-layers-pipe/filter-layers.pipe';
 import { ImportService } from '../import/import.service';
 import { StyleService } from 'app/modules/admin/services/style.service';
+import { AttributeTableService } from './attribute-table/attribute-table.service';
+import Feature from 'ol/Feature';
 
 @Component({
     selector: 'quick-chat',
@@ -83,6 +85,7 @@ export class QuickChatComponent implements OnInit, OnDestroy {
         private _layersService: LayersService,
         private _importService: ImportService,
         private _styleService: StyleService,
+        private _attributeTableService: AttributeTableService,
     ) { }
 
     @HostBinding('class') get classList(): any {
@@ -150,12 +153,24 @@ export class QuickChatComponent implements OnInit, OnDestroy {
         this._layersService.onLayerVisibilityChange(layerId);
     }
 
-    // getLegendStyle(style: any) {
-    //     this._styleService.getLegendStyle(style);
-    // }
-
     openFileInput() : void {
         this._importService.openFileInput();
+    }
+
+    isLayerLine(features: Feature[]): boolean {
+        return features.every(feature => {
+          const geometry = feature.getGeometry();
+          if (geometry) {
+            const geometryType = geometry.getType();
+            return geometryType === 'LineString' || geometryType === 'MultiLineString';
+          }
+          return false;
+        });
+      }
+
+    openAttributeTable(layerId: string) {
+        const layer = this._layersService.getLayerById(layerId);
+        this._attributeTableService.openAttributeTable(layer);
     }
     
     open(): void {

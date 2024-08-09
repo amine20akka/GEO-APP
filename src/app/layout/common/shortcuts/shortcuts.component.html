@@ -99,11 +99,20 @@
                                     }
                                     <!-- Link content template -->
                                     <ng-template #linkContent>
-                                        <div class="relative mb-3 flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-gray-100 dark:bg-gray-700">
-                                            @if (mode === 'modify') {
+                                        <div class="relative mb-3 flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-gray-100 dark:bg-gray-700">
+                                            <!-- @if (mode === 'modify') {
                                                 <mat-icon class="absolute z-20 opacity-0 icon-size-5 group-hover:opacity-100" [svgIcon]="'heroicons_solid:pencil'"></mat-icon>
+                                            } -->
+                                            @if (shortcut.imgUrl) {
+                                                <img [src]="shortcut.imgUrl" 
+                                                     [alt]="shortcut.label" 
+                                                     class="w-full h-full object-cover rounded-full z-10"
+                                                     [ngClass]="{'group-hover:opacity-0': mode === 'modify'}">
+                                            } @else {
+                                                <mat-icon class="z-10" 
+                                                          [ngClass]="{'group-hover:opacity-0': mode === 'modify'}" 
+                                                          [svgIcon]="shortcut.icon"></mat-icon>
                                             }
-                                            <mat-icon class="z-10" [ngClass]="{'group-hover:opacity-0': mode === 'modify'}" [svgIcon]="shortcut.icon"></mat-icon>
                                         </div>
                                         <div class="text-center font-medium">{{ shortcut.label }}</div>
                                         <div class="text-secondary text-center text-md">{{ shortcut.description }}</div>

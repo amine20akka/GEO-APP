@@ -3,7 +3,7 @@
 
 <!-- Navigation -->
 <!-- Jl'ai enlevé Je dois la chercher à partir d'une autre version -->
- 
+
 <!-- Wrapper -->
 <div class="flex w-full min-w-0 flex-auto flex-col">
     <!-- Header -->
@@ -15,10 +15,14 @@
         </button> -->
         <!-- Components -->
         <div class="ml-auto flex items-center space-x-0.5 pl-2 sm:space-x-2">
+            <circle-measure></circle-measure>
             <surface-measure></surface-measure>
             <distance-measure></distance-measure>
             <button mat-icon-button (click)="openFileInput()" [matTooltip]="'Importer une couche'">
                 <mat-icon [svgIcon]="'heroicons_outline:arrow-down-tray'"></mat-icon>
+            </button>
+            <button mat-icon-button (click)="geolocate()" [matTooltip]="'Me localiser'">
+                <mat-icon [svgIcon]="'heroicons_outline:map-pin'"></mat-icon>
             </button>
             <fuse-fullscreen class="hidden md:block"></fuse-fullscreen>
             <shortcuts></shortcuts>

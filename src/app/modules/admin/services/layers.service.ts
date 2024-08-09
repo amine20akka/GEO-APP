@@ -4,8 +4,7 @@ import { Layer, Tile as TileLayer, Vector as VectorLayer } from 'ol/layer';
 import GeoJSON from 'ol/format/GeoJSON';
 import { Vector as VectorSource, TileWMS } from 'ol/source';
 import { BehaviorSubject } from 'rxjs';
-import { FlatStyleLike } from 'ol/style/flat';
-import { StyleLike } from 'ol/style/Style';
+import Style from 'ol/style/Style';
 import { StyleService } from './style.service';
 import { CustomLayer } from 'app/layout/common/quick-chat/quick-chat.types';
 import { v4 as uuidv4 } from 'uuid';
@@ -33,8 +32,52 @@ export class LayersService {
     return this.layersSubject.value.find(layer => layer.name === name);
   }
 
-  exists(customLayer: CustomLayer): boolean {
-    return this.layersSubject.value.some(layer => layer.name === customLayer.name && layer.source === customLayer.source);
+  exists(customLayerFeatures: Feature[]): boolean {
+    return this.layersSubject.value.some(layer => 
+      this.areFeatureArraysEquivalent(layer.features, customLayerFeatures)
+    );
+  }
+
+  nameExists(customLayerName: string): boolean {
+    return this.layersSubject.value.some(layer => layer.name === customLayerName );
+  }
+
+  private areFeatureArraysEquivalent(features1: Feature[], features2: Feature[]): boolean {
+    if (features1.length !== features2.length) {
+      return false;
+    }
+  
+    return features1.every((feature1, index) => {
+      const feature2 = features2[index];
+      return this.areFeaturesSimilar(feature1, feature2);
+    });
+  }
+  
+  private areFeaturesSimilar(feature1: Feature, feature2: Feature): boolean {
+    return (
+      this.areGeometriesSimilar(feature1.getGeometry(), feature2.getGeometry()) &&
+      this.arePropertiesSimilar(feature1.getProperties(), feature2.getProperties())
+    );
+  }
+  
+  private areGeometriesSimilar(geom1: any, geom2: any): boolean {
+    if (!geom1 || !geom2) {
+      return geom1 === geom2;
+    }
+    // Assuming MultiLineString from your example
+    return geom1.type === geom2.type && 
+           JSON.stringify(geom1.coordinates) === JSON.stringify(geom2.coordinates);
+  }
+  
+  private arePropertiesSimilar(props1: Object, props2: Object): boolean {
+    const keys1 = Object.keys(props1);
+
+    return keys1.every(key => {
+      if (key === 'geometry') {
+        return this.areGeometriesSimilar(props1[key], props2[key]);
+      }
+      return props1[key] === props2[key];
+    });
   }
 
   onLayerVisibilityChange(layerId: string): void {
@@ -79,16 +122,16 @@ export class LayersService {
       let layer: Layer | null = null;
       let source: 'WFS' | 'WMS';
       let features: Feature[] = [];
-      let style: StyleLike | undefined;
+      let style: Style | undefined;
   
       if (layerDetails.type === 'VECTOR') {
         let vectorStyle = this.styleService.loadStyleFromLocalStorage(layerDetails.name);
         if (!vectorStyle) {
           vectorStyle = await this.styleService.getStyleForLayer(layerDetails);
           this.styleService.saveStyle(layerDetails.name, vectorStyle);
-          if (!vectorStyle) {
-            vectorStyle = this.styleService.createVectorLayerStyle(layerDetails);
-          }
+        }
+        if (!vectorStyle) {
+          vectorStyle = this.styleService.createVectorLayerStyle(layerDetails);
         }
   
         const vectorSource = new VectorSource({
@@ -98,7 +141,7 @@ export class LayersService {
         layer = new VectorLayer({
           source: vectorSource,
           zIndex: 1,
-          style: vectorStyle as StyleLike | FlatStyleLike,
+          style: vectorStyle,
         });
   
         style = vectorStyle; // Store the style
@@ -136,5 +179,16 @@ export class LayersService {
 
   updateLayers(layers: CustomLayer[]): void {
     this.layersSubject.next(layers);
+  }
+
+  isLayerLine(features: Feature[]): boolean {
+    return features.every(feature => {
+      const geometry = feature.getGeometry();
+      if (geometry) {
+        const geometryType = geometry.getType();
+        return geometryType === 'LineString' || geometryType === 'MultiLineString';
+      }
+      return false;
+    });
   }
 }
