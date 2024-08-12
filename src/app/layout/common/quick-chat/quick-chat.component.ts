@@ -32,6 +32,7 @@ import { ImportService } from '../import/import.service';
 import { StyleService } from 'app/modules/admin/services/style.service';
 import { AttributeTableService } from './attribute-table/attribute-table.service';
 import Feature from 'ol/Feature';
+import { MatDialogModule } from '@angular/material/dialog';
 
 @Component({
     selector: 'quick-chat',
@@ -58,6 +59,7 @@ import Feature from 'ol/Feature';
         MatTabsModule,
         MatSliderModule,
         MatTooltipModule,
+        MatDialogModule,
         FilterLayersPipe,
     ],
 })

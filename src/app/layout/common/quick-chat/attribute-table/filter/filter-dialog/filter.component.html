@@ -1,0 +1,27 @@
+<h1 mat-dialog-title>Filtrer les données</h1>
+<div mat-dialog-content>
+    <mat-form-field appearance="fill">
+        <mat-label>Attribut</mat-label>
+        <mat-select [(ngModel)]="selectedColumn" (selectionChange)="updateColumnType()">
+            <mat-option *ngFor="let column of columns" [value]="column">{{ column }}</mat-option>
+        </mat-select>
+    </mat-form-field>
+
+    @if (columnType === 'text') {
+    <mat-form-field appearance="fill">
+        <mat-label>Texte de filtre</mat-label>
+        <input matInput [(ngModel)]="filterText" />
+    </mat-form-field>
+    }
+
+    @if (columnType === 'number') {
+    <mat-form-field appearance="fill">
+        <mat-label>Nombre de filtre</mat-label>
+        <input matInput type="number" [(ngModel)]="filterNumber" />
+    </mat-form-field>
+    }
+</div>
+<div mat-dialog-actions>
+    <button mat-button (click)="closeDialog()">Annuler</button>
+    <button mat-button (click)="applyFilter()">Appliquer</button>
+</div>

@@ -120,7 +120,8 @@
                 <mat-card class="m-4">
                     <mat-card-header>
                         <mat-card-title>{{ selectedLayer.name }}
-                            <button mat-icon-button (click)="openAttributeTable(selectedLayer.id)">
+                            <button mat-icon-button (click)="openAttributeTable(selectedLayer.id)"
+                                [matTooltip]="'Ouvrir la table attributaire'">
                                 <mat-icon [svgIcon]="'heroicons_outline:table-cells'"></mat-icon>
                             </button>
                         </mat-card-title>
@@ -134,18 +135,18 @@
                             <mat-list-item>
                                 @if (isLayerLine(selectedLayer.features)) {
                                 <span matListItemTitle>Color</span>
-                                    <span matListItemLine>
-                                        <span class="color-preview"
-                                            [style.background-color]="selectedLayer.style.getStroke().getColor()"></span>
-                                        {{ selectedLayer.style.getStroke().getColor() || 'None' }}
-                                    </span>
+                                <span matListItemLine>
+                                    <span class="color-preview"
+                                        [style.background-color]="selectedLayer.style.getStroke().getColor()"></span>
+                                    {{ selectedLayer.style.getStroke().getColor() || 'None' }}
+                                </span>
                                 } @else {
-                                    <span matListItemTitle>Color</span>
-                                    <span matListItemLine>
-                                        <span class="color-preview"
-                                            [style.background-color]="selectedLayer.style.getFill().getColor()"></span>
-                                             {{ selectedLayer.style.getFill().getColor() || 'None' }}
-                                    </span>
+                                <span matListItemTitle>Color</span>
+                                <span matListItemLine>
+                                    <span class="color-preview"
+                                        [style.background-color]="selectedLayer.style.getFill().getColor()"></span>
+                                    {{ selectedLayer.style.getFill().getColor() || 'None' }}
+                                </span>
                                 }
                             </mat-list-item>
                         </mat-list>

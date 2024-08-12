@@ -1,0 +1,73 @@
+.dialog-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: large;
+    padding-bottom: 12px;
+    padding-top: 0;
+    border-bottom: 1px solid #e0e0e0;
+    position: sticky;
+    top: 0;
+    background-color: white;
+    z-index: 1000;
+
+h1 {
+    display: flex;
+    align-items: center;
+    margin: 0;
+
+    small {
+      margin-left: 10px;
+      color: #666;
+    }
+  }
+}
+
+.dialog-actions {
+  display: flex;
+  align-items: center;
+
+  .action-button {
+    margin-left: 10px;
+    size: 0.25rem; // Adjust this value to change the size of the icons
+
+    mat-icon {
+      size: 0.25rem; // Adjust this value to change the size of the icons
+    }
+  }
+}
+
+.table-container {
+    overflow-y: auto;
+    max-height: calc(80vh - 48px); // Adjust this value as needed to fit within the dialog
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+
+    td {
+        padding: 12px;
+        text-align: left;
+        border-bottom: 1px solid #e0e0e0;
+    }
+
+    tr:nth-child(even), tr:nth-child(even):hover {
+        background-color: #f5f5f5;
+    }
+
+    th {
+        background-color: #d9dee0;
+        font-weight: bold;
+        position: sticky;
+        top: 0;
+        z-index: 999;
+        padding: 12px;
+        text-align: left;
+        border-bottom: 1px solid #e0e0e0;
+    }
+
+    th.mat-sort-header-sorted {
+        color: black;
+    }
+}

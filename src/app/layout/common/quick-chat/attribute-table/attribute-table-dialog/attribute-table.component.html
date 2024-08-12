@@ -1,0 +1,26 @@
+<div class="dialog-header">
+    <h1><strong>{{ layerName }} </strong> <small> ({{length}} lignes)</small></h1>
+    <div class="dialog-actions">
+        <button mat-icon-button (click)="openFilter()" [matTooltip]="'Filtrer'" class="action-button">
+            <mat-icon [svgIcon]="'heroicons_outline:funnel'"></mat-icon>
+        </button>
+        <button mat-icon-button (click)="closeDialog()" [matTooltip]="'Fermer'" class="action-button">
+            <mat-icon [svgIcon]="'heroicons_outline:x-mark'"></mat-icon>
+        </button>
+    </div>
+</div>
+
+<div class="table-container">
+    <table mat-table [dataSource]="dataSource" matSort (matSortChange)="announceSortChange($event)"
+        class="mat-elevation-z8">
+        @for (column of this._attributeTableService.displayedColumns; track trackByFn($index, column);) {
+        <ng-container [matColumnDef]="column">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header> {{ column }} </th>
+            <td mat-cell *matCellDef="let element"> {{ element[column] }} </td>
+        </ng-container>
+        }
+        <tr mat-header-row *matHeaderRowDef="this._attributeTableService.displayedColumns"></tr>
+        <tr mat-row *matRowDef="let row; columns: this._attributeTableService.displayedColumns;"></tr>
+    </table>
+
+</div>
