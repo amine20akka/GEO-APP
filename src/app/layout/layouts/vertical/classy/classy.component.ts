@@ -152,6 +152,8 @@ export class ClassyLayoutComponent implements OnInit, OnDestroy {
             navigation.toggle();
         }
     }
+
+    
     imprimerCarte(): void {
         // Créer une nouvelle fenêtre pour l'impression
         const fenetreImpression: Window | null = window.open('', 'Impression Carte', 'height=600,width=800');

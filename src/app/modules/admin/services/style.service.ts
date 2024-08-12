@@ -18,18 +18,15 @@ export class StyleService {
     this.loadStylesFromLocalStorage();
   }
 
-  /**
-   * Returns a legend style for display in the UI.
-   * @param style The OpenLayers style object.
-   * @returns An object containing CSS properties for the legend.
-   */
   getLegendStyle(style: any): any {
     if (style instanceof Style) {
       const fill = style.getFill();
       const image = style.getImage();
 
       if (fill) {
-        return { 'background-color': fill.getColor() };
+        return {
+          'background-color': fill.getColor(),
+        };
       } else if (image && image instanceof CircleStyle) {
         const circleFill = image.getFill();
         return {
@@ -41,9 +38,7 @@ export class StyleService {
     return {};
   }
 
-  /**
-   * Loads styles from local storage with a specific prefix and updates the observable.
-   */
+  // Charger les styles du local storage avec un préfixe spécifique
   loadStylesFromLocalStorage(): void {
     const styles: { [layerName: string]: Style } = {};
     for (let i = 0; i < localStorage.length; i++) {
@@ -59,11 +54,7 @@ export class StyleService {
     this.stylesSubject.next(styles);
   }
 
-  /**
-   * Saves a style to local storage with a specific prefix and updates the observable.
-   * @param layerName The name of the layer.
-   * @param style The OpenLayers style object.
-   */
+  // Enregistrer un style dans le local storage avec un préfixe spécifique
   saveStyle(layerName: string, style: Style): void {
     this.saveStyleToLocalStorage(layerName, style);
 
@@ -73,10 +64,7 @@ export class StyleService {
     this.stylesSubject.next(currentStyles);
   }
 
-  /**
-   * Removes a style from local storage and updates the observable.
-   * @param layerName The name of the layer.
-   */
+  // Supprimer un style du local storage et mettre à jour l'observable
   removeStyle(layerName: string): void {
     localStorage.removeItem(`style_${layerName}`);
 
@@ -86,14 +74,11 @@ export class StyleService {
     this.stylesSubject.next(currentStyles);
   }
 
-  /**
-   * Extracts a style from an SLD XML string.
-   * @param sldXml The SLD XML string.
-   * @returns The OpenLayers style object.
-   */
   extractStyleFromSLD(sldXml: string): Style {
     const parser = new DOMParser();
     const sldDoc = parser.parseFromString(sldXml, 'text/xml');
+
+    // Find the NamedLayer element corresponding to the layer name
     const namedLayers = sldDoc.querySelectorAll('NamedLayer');
     let targetNamedLayer: Element | null = null;
 
@@ -104,12 +89,14 @@ export class StyleService {
       }
     });
 
-    const rules = targetNamedLayer?.querySelectorAll('Rule');
+    // Find the style rules within the NamedLayer
+    const rules = targetNamedLayer.querySelectorAll('Rule');
     const style = new Style();
 
-    rules?.forEach(rule => {
+    rules.forEach(rule => {
       const symbolizer = rule.querySelector('PolygonSymbolizer, LineSymbolizer, PointSymbolizer');
       if (symbolizer) {
+        // Extract the fill (Fill)
         const fillElement = symbolizer.querySelector('Fill');
         if (fillElement) {
           const fillColor = fillElement.querySelector('CssParameter[name="fill"]')?.textContent;
@@ -121,6 +108,7 @@ export class StyleService {
           }
         }
 
+        // Extract the stroke (Stroke)
         const strokeElement = symbolizer.querySelector('Stroke');
         if (strokeElement) {
           const strokeColor = strokeElement.querySelector('CssParameter[name="stroke"]')?.textContent;
@@ -133,6 +121,7 @@ export class StyleService {
           }
         }
 
+        // Extract the symbol for points
         if (symbolizer.tagName === 'PointSymbolizer') {
           const graphicElement = symbolizer.querySelector('Graphic');
           if (graphicElement) {
@@ -146,15 +135,10 @@ export class StyleService {
         }
       }
     });
-
     return style;
   }
 
-  /**
-   * Converts a hexadecimal color to RGB format.
-   * @param hex The hexadecimal color string.
-   * @returns The RGB color string.
-   */
+  // Fonction utilitaire pour convertir une couleur hexadécimale en RGB
   private hexToRgb(hex: string): string {
     const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
     return result ?
@@ -162,39 +146,36 @@ export class StyleService {
       '0,0,0';
   }
 
-  /**
-   * Fetches an SLD from GeoServer and returns it as an XML string.
-   * @param layerDetails The details of the layer to fetch the SLD for.
-   * @returns The SLD XML string.
-   */
   async fetchSLDFromGeoServer(layerDetails: any): Promise<string> {
     const styleUrl = layerDetails.defaultStyle.href.replace('.json', '.sld');
+    const url = styleUrl;
+
+    // Create base64 encoded credentials
     const credentials = btoa(`admin:geoserver`);
 
     try {
-      const response = await fetch(styleUrl, {
-        headers: { 'Authorization': `Basic ${credentials}` }
+      const response = await fetch(url, {
+        headers: {
+          'Authorization': `Basic ${credentials}`
+        }
       });
 
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
 
-      return await response.text();
+      const sldXml = await response.text();
+      return sldXml;
     } catch (error) {
       console.error('Error fetching SLD:', error);
       throw error;
     }
   }
 
-  /**
-   * Gets a style for a given layer by fetching the SLD from GeoServer and extracting the style.
-   * @param layerDetails The details of the layer.
-   * @returns The OpenLayers style object.
-   */
   async getStyleForLayer(layerDetails: any): Promise<Style> {
     try {
       const sldXml = await this.fetchSLDFromGeoServer(layerDetails);
+      console.log('stylesld' , this.extractStyleFromSLD(sldXml))
       return this.extractStyleFromSLD(sldXml);
     } catch (error) {
       console.error('Error getting style for layer:', error);
@@ -202,29 +183,31 @@ export class StyleService {
     }
   }
 
-  /**
-   * Creates a new vector layer style with a unique color based on the layer name.
-   * @param layerDetails The details of the layer.
-   * @returns The OpenLayers style object.
-   */
   createVectorLayerStyle(layerDetails: any): Style {
+    // Example: Generate a unique color based on the layer name bordure epaisseur bordure
     const color = this.stringToColor(layerDetails.name);
+
     return new Style({
       image: new CircleStyle({
         radius: 5,
-        fill: new Fill({ color }),
-        stroke: new Stroke({ color: '#fff', width: 1 }),
+        fill: new Fill({
+          color: color,
+        }),
+        stroke: new Stroke({
+          color: '#fff',
+          width: 1,
+        }),
       }),
-      stroke: new Stroke({ color, width: 2 }),
-      fill: new Fill({ color: color + '33' }) // Add some transparency
+      stroke: new Stroke({
+        color: color,
+        width: 2
+      }),
+      fill: new Fill({
+        color: color + '33' // Add some transparency
+      })
     });
   }
 
-  /**
-   * Converts a string to a unique color.
-   * @param str The input string.
-   * @returns The corresponding color string.
-   */
   stringToColor(str: string): string {
     let hash = 0;
     for (let i = 0; i < str.length; i++) {
@@ -238,67 +221,109 @@ export class StyleService {
     return color;
   }
 
-  /**
-   * Saves a style to local storage.
-   * @param layerName The name of the layer.
-   * @param style The OpenLayers style object.
-   */
+  // Save style to local storage
   saveStyleToLocalStorage(layerName: string, style: Style): void {
-    const styleJson = this.styleToJson(style);
+    const styleJson = this.styleToJson(style); // Convert style to a serializable format
     localStorage.setItem(`style_${layerName}`, JSON.stringify(styleJson));
   }
 
-  /**
-   * Loads a style from local storage.
-   * @param layerName The name of the layer.
-   * @returns The OpenLayers style object or null if not found.
-   */
+  // Load style from local storage
   loadStyleFromLocalStorage(layerName: string): Style | null {
     const styleJson = localStorage.getItem(`style_${layerName}`);
-    return styleJson ? this.jsonToStyle(JSON.parse(styleJson)) : null;
+    return styleJson ? this.jsonToStyle(JSON.parse(styleJson)) : null; // Convert back to style from JSON
   }
 
-  /**
-   * Converts an OpenLayers style object to a JSON representation.
-   * @param style The OpenLayers style object.
-   * @returns The JSON representation of the style.
-   */
-  styleToJson(style: Style): any {
+  // Convert OpenLayers Style to JSON
+  private styleToJson(style: Style): any {
     const fill = style.getFill();
     const stroke = style.getStroke();
     const image = style.getImage();
 
-    return {
-      fill: fill ? fill.getColor() : null,
-      stroke: stroke ? {
-        color: stroke.getColor(),
-        width: stroke.getWidth()
-      } : null,
-      image: image instanceof CircleStyle ? {
+    let imageJson = null;
+    if (image instanceof CircleStyle) {
+      imageJson = {
         radius: image.getRadius(),
         fill: image.getFill() ? image.getFill().getColor() : null,
-        stroke: image.getStroke() ? {
-          color: image.getStroke().getColor(),
-          width: image.getStroke().getWidth()
-        } : null
-      } : null
+      };
+    }
+
+    return {
+      fill: fill ? { color: fill.getColor() } : null,
+      stroke: stroke ? { color: stroke.getColor(), width: stroke.getWidth() } : null,
+      image: imageJson,
+      zIndex: style.getZIndex() !== undefined && style.getZIndex() !== null ? style.getZIndex() : 0
     };
   }
 
-  /**
-   * Converts a JSON representation of a style back to an OpenLayers style object.
-   * @param json The JSON representation of the style.
-   * @returns The OpenLayers style object.
-   */
-  jsonToStyle(json: any): Style {
-    return new Style({
-      fill: json.fill ? new Fill({ color: json.fill }) : undefined,
-      stroke: json.stroke ? new Stroke({ color: json.stroke.color, width: json.stroke.width }) : undefined,
-      image: json.image ? new CircleStyle({
-        radius: json.image.radius,
-        fill: json.image.fill ? new Fill({ color: json.image.fill }) : undefined,
-        stroke: json.image.stroke ? new Stroke({ color: json.image.stroke.color, width: json.image.stroke.width }) : undefined,
-      }) : undefined
-    });
+
+  // Convert JSON to OpenLayers Style
+  private jsonToStyle(json: any): Style {
+    const fill = json.fill ? new Fill({ color: json.fill.color }) : null;
+    const stroke = json.stroke ? new Stroke({ color: json.stroke.color, width: json.stroke.width }) : null;
+
+    let image: ImageStyle | null = null;
+    if (json.image) {
+      if (json.image.radius !== undefined) {
+        image = new CircleStyle({
+          radius: json.image.radius,
+          fill: new Fill({ color: json.image.fill || null }),
+        });
+      }
+
+      return new Style({
+        fill,
+        stroke,
+        image,
+        zIndex: json.zIndex !== undefined && json.zIndex !== null ? json.zIndex : 0
+      });
+    }
   }
+  // In style.service.ts
+
+// Add these methods
+updateLayerStrokeColor(layer: CustomLayer, color: string): void {
+  if (layer.style instanceof Style) {
+      const currentStyle = layer.style;
+      const currentStroke = currentStyle.getStroke();
+      const newStroke = new Stroke({
+          color: color,
+          width: currentStroke ? currentStroke.getWidth() : 1
+      });
+
+      const newStyle = this.createNewStyle(currentStyle, newStroke);
+      this.applyNewStyle(layer, newStyle);
+  }
+}
+
+updateLayerStrokeWidth(layer: CustomLayer, width: number): void {
+  if (layer.style instanceof Style) {
+      const currentStyle = layer.style;
+      const currentStroke = currentStyle.getStroke();
+      const newStroke = new Stroke({
+          color: currentStroke ? currentStroke.getColor() : '#000000',
+          width: width
+      });
+
+      const newStyle = this.createNewStyle(currentStyle, newStroke);
+      this.applyNewStyle(layer, newStyle);
+  }
+}
+
+private createNewStyle(currentStyle: Style, newStroke: Stroke): Style {
+  return new Style({
+      fill: currentStyle.getFill(),
+      stroke: newStroke,
+      image: currentStyle.getImage(),
+      text: currentStyle.getText(),
+      zIndex: currentStyle.getZIndex()
+  });
+}
+
+private applyNewStyle(layer: CustomLayer, newStyle: Style): void {
+  layer.style = newStyle;
+  if (layer.layer instanceof VectorLayer) {
+      layer.layer.setStyle(() => newStyle);
+  }
+  this.saveStyle(layer.name, newStyle);
+}
 }

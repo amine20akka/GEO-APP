@@ -4,6 +4,7 @@ import { AuthGuard } from 'app/core/auth/guards/auth.guard';
 import { NoAuthGuard } from 'app/core/auth/guards/noAuth.guard';
 import { LayoutComponent } from 'app/layout/layout.component';
 import { PMapComponent } from './modules/admin/dashboards/p-map/p-map.component';
+import { MiniMapComponent } from './modules/admin/dashboards/mini-map/mini-map.component';
 
 
 // @formatter:off
@@ -79,6 +80,8 @@ export const appRoutes: Route[] = [
             // {path: 'example', loadChildren: () => import('app/modules/admin/example/example.routes')},
             {path: 'dashboards', children: [ 
                 { path: 'pmap', component: PMapComponent },
+                { path: 'minimap', component: MiniMapComponent },
+
                 { path: '', redirectTo: 'pmap', pathMatch: 'full' }
                 ]},
 

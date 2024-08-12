@@ -20,8 +20,6 @@ export class LayersService {
   
   // Using BehaviorSubject to manage layers state
   private layersSubject = new BehaviorSubject<CustomLayer[]>([]);
-  
-  // Exposing an observable to allow components to subscribe to layer changes
   layers$ = this.layersSubject.asObservable();
   
   private zIndexCounter = 0;
@@ -107,7 +105,7 @@ export class LayersService {
         let vectorStyle = this.styleService.loadStyleFromLocalStorage(layerDetails.name);
         if (!vectorStyle) {
           vectorStyle = await this.styleService.getStyleForLayer(layerDetails);
-          console.log('fetchedstyle', vectorStyle);
+          console.log('fetchedstyleLocStor', vectorStyle);
           this.styleService.saveStyle(layerDetails.name, vectorStyle);
           if (!vectorStyle) {
             vectorStyle = this.styleService.createVectorLayerStyle(layerDetails);
@@ -121,7 +119,7 @@ export class LayersService {
         layer = new VectorLayer({
           source: vectorSource,
           zIndex: 1,
-          style: vectorStyle as Style | StyleLike | FlatStyleLike,
+          style: vectorStyle ,
         });
 
         style = vectorStyle; // Store the style
@@ -134,7 +132,8 @@ export class LayersService {
         );
         features = new GeoJSON().readFeatures(featureResponse.data);
         vectorSource.addFeatures(features);
-      } else if (layerDetails.type === 'RASTER') {
+      } 
+      else if (layerDetails.type === 'RASTER') {
         layer = new TileLayer({
           source: new TileWMS({
             url: `${this.geoServerUrl}/wms`,

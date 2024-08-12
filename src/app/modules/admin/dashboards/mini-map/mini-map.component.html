@@ -1,0 +1,9 @@
+<div class="mini-map-container" [class.expanded]="isExpanded">
+    <div #mapElement class="map-element"></div>
+    <button mat-icon-button color="primary" (click)="navigateToPMap()" class="back-to-pmap-button" matTooltip="Back to Main Map">
+        <mat-icon>arrow_back</mat-icon>
+    </button>
+    <button mat-icon-button color="primary" (click)="toggleMapSize()" class="toggle-size-button" [matTooltip]="isExpanded ? 'Shrink Map' : 'Expand Map'">
+        <mat-icon>{{ isExpanded ? 'fullscreen_exit' : 'fullscreen' }}</mat-icon>
+    </button>
+</div>
