@@ -8,6 +8,7 @@ import GPX from 'ol/format/GPX';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
+import { MatButtonModule } from '@angular/material/button';
 
 @Component({
   selector: 'app-import-dialog',
@@ -19,6 +20,7 @@ import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angula
     MatDialogModule,
     MatFormFieldModule,
     MatInputModule,
+    MatButtonModule,
   ],
   templateUrl: './import-dialog.component.html',
   styleUrl: './import-dialog.component.scss'

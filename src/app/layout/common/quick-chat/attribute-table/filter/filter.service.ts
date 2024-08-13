@@ -2,27 +2,25 @@ import { Injectable } from '@angular/core';
 import { MatDialog } from '@angular/material/dialog';
 import { FilterComponent } from './filter-dialog/filter.component';
 import { AttributeTableService } from '../attribute-table.service';
-import { Feature } from 'ol';
 
 @Injectable({
   providedIn: 'root'
 })
 export class FilterService {
-  filteredFeatures: Feature[] = [];
   columnTypes: { [key: string]: string } = {};
 
   constructor(
     private dialog: MatDialog, 
     private _attributeTableService: AttributeTableService,
-  ) { 
-    this.filteredFeatures = _attributeTableService.features;
-  }
+  ) {}
 
-  openFilter(): void {
+  openFilter(): any {
+    this.detectColumnTypes();
     this.dialog.open(FilterComponent, {
-      width: '300px',
+      width: 'auto',
+      height: 'auto',
       data: { columns: this._attributeTableService.displayedColumns,
-        columnsTypes: this.columnTypes, 
+        columnTypes: this.columnTypes, 
       }
     });
   }
@@ -40,15 +38,4 @@ export class FilterService {
     }
   }
 
-  applyFilter(filter: any): void {
-    const { column, value, type } = filter;
-    this.filteredFeatures = this._attributeTableService.features.filter(item => {
-      const itemValue = item[column];
-      if (type === 'number') {
-        return itemValue === value;
-      } else {
-        return itemValue.toString().toLowerCase().includes(value.toString().toLowerCase());
-      }
-    });
-  }
 }
