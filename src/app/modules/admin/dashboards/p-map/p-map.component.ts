@@ -4,6 +4,7 @@ import { LayersService } from '../../services/layers.service';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { Subscription } from 'rxjs';
+import { MatCardModule } from '@angular/material/card';
 
 @Component({
   selector: 'app-pmap',
@@ -11,7 +12,11 @@ import { Subscription } from 'rxjs';
   styleUrls: ['./p-map.component.scss'],
   encapsulation: ViewEncapsulation.None,
   standalone: true,
-  imports: [MatButtonModule, MatIconModule],
+  imports: [
+    MatButtonModule, 
+    MatIconModule,
+    MatCardModule,
+  ],
 })
 export class PMapComponent implements OnInit, OnDestroy {
   private layersSubscription: Subscription;
@@ -23,8 +28,17 @@ export class PMapComponent implements OnInit, OnDestroy {
     this.initializeLayers();
   }
 
+  ngAfterViewInit(): void {
+    this.mapService.addHoverInteraction();
+  }
+
   ngOnDestroy(): void {
-    this.layersSubscription.unsubscribe();
+    if (this.layersSubscription) {
+      this.layersSubscription.unsubscribe();
+    }
+    if (this.mapService.selectInteraction) {
+      this.mapService.getMap().removeInteraction(this.mapService.selectInteraction);
+    }
   }
 
   private initializeMap() {

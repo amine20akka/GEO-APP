@@ -1,19 +1,20 @@
 import { Injectable } from '@angular/core';
 import Map from 'ol/Map';
-import { Feature, Geolocation } from 'ol';
+import { Geolocation, Feature, Overlay } from 'ol';
 import View from 'ol/View';
 import TileLayer from 'ol/layer/Tile';
 import OSM from 'ol/source/OSM';
 import { Control, defaults as defaultControls, FullScreen, Rotate, ScaleLine } from 'ol/control';
-import { defaults as defaultInteractions, DblClickDragZoom, DragRotateAndZoom } from 'ol/interaction';
+import { defaults as defaultInteractions, DblClickDragZoom, DragRotateAndZoom, Select } from 'ol/interaction';
+import { pointerMove } from 'ol/events/condition';
 import { XYZ } from 'ol/source';
 import { BehaviorSubject, Observable } from 'rxjs';
 import { CustomLayer } from 'app/layout/common/quick-chat/quick-chat.types';
-import VectorLayer from 'ol/layer/Vector';
+import { ProjectionLike } from 'ol/proj';
+import { Circle, Point } from 'ol/geom';
 import VectorSource from 'ol/source/Vector';
-import { Point } from 'ol/geom';
-import { Fill, Stroke, Style } from 'ol/style';
-import CircleStyle from 'ol/style/Circle';
+import VectorLayer from 'ol/layer/Vector';
+import { Circle as CircleStyle, Fill, Stroke, Style } from 'ol/style';
 
 @Injectable({
   providedIn: 'root'
@@ -21,7 +22,11 @@ import CircleStyle from 'ol/style/Circle';
 export class MapService {
   private mapSubject: BehaviorSubject<Map | null> = new BehaviorSubject<Map | null>(null);
   public map$: Observable<Map | null> = this.mapSubject.asObservable();
+  isGeolocationActive = false;
   private geolocationLayer: VectorLayer<VectorSource>;
+  private geolocation: Geolocation;
+  selectInteraction: Select;
+  overlay: Overlay;
 
   constructor() { }
 
@@ -125,6 +130,7 @@ export class MapService {
     this.mapSubject.next(map);
   }
 
+
   onBackgroundChange(selectedValue: string): void {
     const map = this.getMap();
     if (!map) {
@@ -164,6 +170,14 @@ export class MapService {
           properties: { background: true }
         });
         break;
+      case 'Light Gray Canvas':
+        backgroundLayer = new TileLayer({
+          source: new XYZ({
+            url: 'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}'
+          }),
+          properties: { background: true }
+        });
+        break;
       default:
         console.warn('No matching background layer found');
         return;
@@ -180,72 +194,171 @@ export class MapService {
       return;
     }
 
-    // Supprimer l'ancien calque de géolocalisation, le cas échéant
+    // If geolocation layer exists, remove it and return
     if (this.geolocationLayer) {
       map.removeLayer(this.geolocationLayer);
+      this.geolocationLayer = null;
+      this.geolocation.setTracking(false);
+      this.geolocation = null;
+      return;
     }
 
-    this.geolocationLayer = new VectorLayer({
-      source: new VectorSource(),
-    });
-
-    const geolocation = new Geolocation({
+    this.geolocation = new Geolocation({
       trackingOptions: {
         enableHighAccuracy: true,
       },
-      projection: map.getView().getProjection(),
+      projection: map.getView().getProjection() as ProjectionLike,
     });
 
-    geolocation.setTracking(true);
+    this.geolocation.setTracking(true);
 
-    geolocation.on('change:position', () => {
-      const coordinates = geolocation.getPosition();
+    // Create source and layer for displaying position
+    const positionSource = new VectorSource();
+    this.geolocationLayer = new VectorLayer({
+      source: positionSource,
+    });
+    map.addLayer(this.geolocationLayer);
+
+    this.geolocation.on('change:position', () => {
+      const coordinates = this.geolocation.getPosition();
       if (coordinates) {
-        // Animation vers la position
-        map.getView().animate({
-          center: coordinates,
-          duration: 3000, // Durée de l'animation en millisecondes
-          zoom: 15, // Niveau de zoom
+        positionSource.clear();
+        const positionFeature = new Feature({
+          geometry: new Point(coordinates),
+          type: 'geolocation',
         });
-        geolocation.setTracking(false); // Stop tracking after getting the position
-        // this.addGeolocationMarker(coordinates as [number, number]);
-        // map.addLayer(this.geolocationLayer);
+        positionSource.addFeature(positionFeature);
+
+        // Accuracy circle
+        const accuracy = this.geolocation.getAccuracy();
+        let accuracyFeature: Feature | null = null;
+        if (accuracy) {
+          accuracyFeature = new Feature({
+            geometry: new Circle(coordinates, accuracy),
+            type: 'geolocation',
+          });
+          positionSource.addFeature(accuracyFeature);
+        }
+
+        // Styling
+        const styles = [
+          // Accuracy circle style
+          new Style({
+            stroke: new Stroke({
+              color: 'rgba(0, 0, 255, 0.2)',
+              width: 1,
+            }),
+            fill: new Fill({
+              color: 'rgba(0, 0, 255, 0.1)',
+            }),
+          }),
+          // Position point style
+          new Style({
+            image: new CircleStyle({
+              radius: 6,
+              fill: new Fill({
+                color: '#3399CC',
+              }),
+              stroke: new Stroke({
+                color: '#fff',
+                width: 2,
+              }),
+            }),
+          }),
+        ];
+
+        positionFeature.setStyle(styles);
+        accuracyFeature?.setStyle(styles[0]);
+
+        const view = map.getView();
+        const currentZoom = view.getZoom();
+
+        // Zoom out
+        view.animate({
+          zoom: currentZoom - 4, // Adjust this value to control how far it zooms out
+          duration: 2000
+        }, () => {
+          // Callback after zoom out is complete
+          // Move to new center
+          view.animate({
+            center: coordinates,
+            duration: 2000
+          }, () => {
+            // Callback after centering is complete
+            // Zoom in
+            view.animate({
+              zoom: 15,
+              duration: 2000
+            });
+          });
+        });
       }
+      this.geolocation.setTracking(false);
     });
 
-    geolocation.on('error', (error) => {
+    this.geolocation.on('error', (error) => {
       console.error('Geolocation error:', error);
     });
   }
 
-  private addGeolocationMarker(coordinates: [number, number]): void {
-    const marker = new Feature({
-      geometry: new Point(coordinates),
+  addHoverInteraction(): void {
+    this.selectInteraction = new Select({
+      condition: pointerMove
     });
 
-    marker.setStyle(new Style({
-      image: new CircleStyle({
-        radius: 7,
-        fill: new Fill({
-          color: '#3399CC',
-        }),
-        stroke: new Stroke({
-          color: '#fff',
-          width: 2,
-        }),
-      }),
-    }));
+    // Create the card element dynamically
+    const cardElement = document.createElement('mat-card');
+    cardElement.className = 'feature-properties-card';
 
-    this.geolocationLayer.getSource().clear(); // Clear previous markers if needed
-    this.geolocationLayer.getSource().addFeature(marker);
-  }
+    const cardContent = `
+      <mat-card-content>
+        <table class="feature-properties-table" id="feature-properties-table">
+        </table>
+      </mat-card-content>
+    `;
+    cardElement.innerHTML = cardContent;
+    document.body.appendChild(cardElement); // Add the card to the body
 
-  removeGeolocationLayer(): void {
-    const map = this.getMap();
-    if (this.geolocationLayer) {
-      map.removeLayer(this.geolocationLayer);
-      this.geolocationLayer = null;
-    }
+    // Function to update card content
+    const updateCardContent = (properties: { [key: string]: any }) => {
+      const tableElement = document.getElementById('feature-properties-table');
+      let contentHtml = '';
+      for (const [key, value] of Object.entries(properties)) {
+        if (key !== 'geometry') {
+          contentHtml += `<tr><td class="property-key"><strong>${key}:</strong></td><td class="property-value">${value}</td></tr>`;
+        }
+      }
+      tableElement.innerHTML = contentHtml;
+    };
+
+    let isHovering = false; // Flag to track hovering state
+
+    this.selectInteraction.on('select', (e) => {
+      const feature = e.selected[0];
+      if (feature && feature.get('type') === 'Feature') {
+        const properties = feature.getProperties();
+        updateCardContent(properties);
+        isHovering = true;
+      } else {
+        isHovering = false;
+        cardElement.style.display = 'none';
+      }
+    });
+
+    this.getMap().addInteraction(this.selectInteraction);
+
+    // Update card position based on mouse pointer
+    this.getMap().on('pointermove', (event) => {
+      const feature = this.getMap().forEachFeatureAtPixel(event.pixel, (feature) => feature);
+      if (feature && feature.get('type') === 'Feature') {
+        // Position the card 2px away from the pointer
+        cardElement.style.transform = `translate(${event.pixel[0] + 20}px, ${event.pixel[1] + 20}px)`;
+        cardElement.style.display = 'block';
+        isHovering = true;
+      } else if (!isHovering) {
+        cardElement.style.display = 'none';
+      }
+    });
   }
 
 

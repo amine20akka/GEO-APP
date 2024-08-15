@@ -22,10 +22,14 @@
             }
 
             @if (columnType === 'number') {
-            <mat-form-field appearance="fill" class="form-fields">
-                <mat-label>Nombre de filtre</mat-label>
-                <input matInput type="number" formControlName="filterNumber" />
-            </mat-form-field>
+                <mat-form-field appearance="fill" class="form-fields">
+                    <mat-label>Minimum</mat-label>
+                    <input matInput type="number" formControlName="filterMinNumber" />
+                </mat-form-field>
+                <mat-form-field appearance="fill" class="form-fields">
+                    <mat-label>Maximum</mat-label>
+                    <input matInput type="number" formControlName="filterMaxNumber" />
+                </mat-form-field>
             }
         </div>
     </div>

@@ -52,7 +52,8 @@ export class AttributeTableService {
       const itemValue = item.getProperties()[filter.column];
       if (itemValue) {
         if (filter.type === 'number') {
-          return itemValue === filter.value;
+          const { min, max } = filter.value;
+          return itemValue >= min && itemValue <= max;
         } else {
           return itemValue.toString().toLowerCase().includes(filter.value.toString().toLowerCase());
         }

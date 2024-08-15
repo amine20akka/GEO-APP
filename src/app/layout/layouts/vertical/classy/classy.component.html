@@ -21,8 +21,8 @@
             <button mat-icon-button (click)="openFileInput()" [matTooltip]="'Importer une couche'">
                 <mat-icon [svgIcon]="'heroicons_outline:arrow-down-tray'"></mat-icon>
             </button>
-            <button mat-icon-button (click)="geolocate()" [matTooltip]="'Me localiser'">
-                <mat-icon [svgIcon]="'heroicons_outline:map-pin'"></mat-icon>
+            <button mat-icon-button (click)="geolocate()" [matTooltip]="this._mapService.isGeolocationActive ? 'Désactiver la localisation' : 'Me localiser'">
+                <mat-icon [svgIcon]="this._mapService.isGeolocationActive ? 'heroicons_outline:x-mark' : 'heroicons_outline:map-pin'"></mat-icon>
             </button>
             <fuse-fullscreen class="hidden md:block"></fuse-fullscreen>
             <shortcuts></shortcuts>

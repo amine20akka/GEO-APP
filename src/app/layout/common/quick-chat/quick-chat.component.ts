@@ -29,10 +29,10 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { CustomLayer } from './quick-chat.types';
 import { FilterLayersPipe } from 'app/modules/admin/filter-layers-pipe/filter-layers.pipe';
 import { ImportService } from '../import/import.service';
-import { StyleService } from 'app/modules/admin/services/style.service';
 import { AttributeTableService } from './attribute-table/attribute-table.service';
 import Feature from 'ol/Feature';
 import { MatDialogModule } from '@angular/material/dialog';
+import { MapService } from 'app/modules/admin/services/map.service';
 
 @Component({
     selector: 'quick-chat',
@@ -86,7 +86,7 @@ export class QuickChatComponent implements OnInit, OnDestroy {
         private _scrollStrategyOptions: ScrollStrategyOptions,
         private _layersService: LayersService,
         private _importService: ImportService,
-        private _styleService: StyleService,
+        private _mapService: MapService,
         private _attributeTableService: AttributeTableService,
     ) { }
 

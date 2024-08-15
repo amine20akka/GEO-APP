@@ -74,7 +74,7 @@ export class ClassyLayoutComponent implements OnInit, OnDestroy {
         private _fuseMediaWatcherService: FuseMediaWatcherService,
         private _fuseNavigationService: FuseNavigationService,
         private _importService: ImportService,
-        private _mapService: MapService,
+        public _mapService: MapService,
     ) {}
 
     // -----------------------------------------------------------------------------------------------------
@@ -138,6 +138,7 @@ export class ClassyLayoutComponent implements OnInit, OnDestroy {
 
     geolocate() : void {
         this._mapService.geolocate();
+        this._mapService.isGeolocationActive = !this._mapService.isGeolocationActive;
     }
     
     openShortcuts(): void {

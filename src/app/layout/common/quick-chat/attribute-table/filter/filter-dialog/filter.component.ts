@@ -1,16 +1,20 @@
-import { Component, Inject } from '@angular/core';
-import { MatFormFieldModule } from '@angular/material/form-field';
+import { Component, Inject, OnDestroy, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MAT_DIALOG_DATA, MatDialogActions, MatDialogContent, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
+import { AttributeTableService } from '../../attribute-table.service';
+import { Subject } from 'rxjs';
+import { takeUntil } from 'rxjs/operators';
+import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 import { MatOptionModule } from '@angular/material/core';
-import { AttributeTableService } from '../../attribute-table.service';
-import { MatCardModule } from '@angular/material/card';
-import { MatButtonModule, MatFabButton } from '@angular/material/button';
+import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
+
 @Component({
   selector: 'app-filter',
+  templateUrl: './filter.component.html',
+  styleUrls: ['./filter.component.scss'],
   standalone: true,
   imports: [
     MatFormFieldModule,
@@ -21,22 +25,18 @@ import { MatIconModule } from '@angular/material/icon';
     MatInputModule,
     MatSelectModule,
     MatOptionModule,
-    MatCardModule,
     MatButtonModule,
     MatIconModule,
-    MatFabButton,
   ],
-  templateUrl: './filter.component.html',
-  styleUrl: './filter.component.scss'
 })
-export class FilterComponent {
+export class FilterComponent implements OnInit, OnDestroy {
   filterForm: FormGroup;
   filterText: string = '';
-  filterNumber: number | null = null;
   columns: string[] = [];
   selectedColumn: string = '';
-  columnType: string = 'text';
-  
+  columnType: string = '';
+  private destroy$ = new Subject<void>();
+
   constructor(
     @Inject(MAT_DIALOG_DATA) public columnsInfo: any,
     private _attributeTableService: AttributeTableService,
@@ -53,19 +53,29 @@ export class FilterComponent {
     this.filterForm = this.fb.group({
       selectedColumn: ['', Validators.required],
       filterText: [''],
-      filterNumber: [null]
+      filterMinNumber: [null],
+      filterMaxNumber: [null],
     });
 
-    this.filterForm.get('selectedColumn').valueChanges.subscribe(value => {
-      this.selectedColumn = value;
-      this.updateColumnType();
-    });
+    this.filterForm.get('selectedColumn').valueChanges
+      .pipe(takeUntil(this.destroy$))
+      .subscribe((value) => {
+        this.selectedColumn = value;
+        this.updateColumnType();
+      });
+
+    this.addNumberValidation();
+  }
+
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
   }
 
   trackByFn(index: number, item: any): any {
     return item.id || index;
   }
-  
+
   closeDialog(): void {
     this._dialogRef.close();
   }
@@ -74,8 +84,14 @@ export class FilterComponent {
     if (this.filterForm.valid) {
       const selectedColumn = this.filterForm.get('selectedColumn').value;
       const filterText = this.filterForm.get('filterText').value;
-      const filterNumber = this.filterForm.get('filterNumber').value;
-      this._attributeTableService.applyFilter({ column: selectedColumn, value: this.columnType === 'text' ? filterText : filterNumber, type: this.columnType });
+      const filterMinNumber = this.filterForm.get('filterMinNumber').value;
+      const filterMaxNumber = this.filterForm.get('filterMaxNumber').value;
+
+      this._attributeTableService.applyFilter({
+        column: selectedColumn,
+        value: this.columnType === 'text' ? filterText : { min: filterMinNumber, max: filterMaxNumber },
+        type: this.columnType,
+      });
       this.closeDialog();
     }
   }
@@ -84,14 +100,48 @@ export class FilterComponent {
     this.columnType = this.columnsInfo.columnTypes[this.selectedColumn];
 
     if (this.columnType === 'text') {
+      this.filterForm.get('filterMinNumber').clearValidators();
+      this.filterForm.get('filterMaxNumber').clearValidators();
       this.filterForm.get('filterText').setValidators(Validators.required);
-      this.filterForm.get('filterNumber').clearValidators();
     } else if (this.columnType === 'number') {
-      this.filterForm.get('filterNumber').setValidators(Validators.required);
       this.filterForm.get('filterText').clearValidators();
+      this.addNumberValidation();
     }
 
     this.filterForm.get('filterText').updateValueAndValidity();
-    this.filterForm.get('filterNumber').updateValueAndValidity();
+    this.filterForm.get('filterMinNumber').updateValueAndValidity();
+    this.filterForm.get('filterMaxNumber').updateValueAndValidity();
+  }
+
+  addNumberValidation(): void {
+    this.filterForm.get('filterMinNumber').setValidators(Validators.required);
+    this.filterForm.get('filterMaxNumber').setValidators(Validators.required);
+
+    const minControl = this.filterForm.get('filterMinNumber');
+    const maxControl = this.filterForm.get('filterMaxNumber');
+
+    minControl.valueChanges
+      .pipe(takeUntil(this.destroy$))
+      .subscribe((minValue) => {
+        if (this.columnType === 'number') {
+          if (minValue !== null && maxControl.value !== null && minValue > maxControl.value) {
+            maxControl.setValue(minValue);
+          }
+          maxControl.setValidators([Validators.required, Validators.min(minValue)]);
+          maxControl.updateValueAndValidity({ onlySelf: true, emitEvent: false });
+        }
+      });
+
+    maxControl.valueChanges
+      .pipe(takeUntil(this.destroy$))
+      .subscribe((maxValue) => {
+        if (this.columnType === 'number') {
+          if (maxValue !== null && minControl.value !== null && maxValue < minControl.value) {
+            minControl.setValue(maxValue);
+          }
+          minControl.setValidators([Validators.required, Validators.max(maxValue)]);
+          minControl.updateValueAndValidity({ onlySelf: true, emitEvent: false });
+        }
+      });
   }
 }

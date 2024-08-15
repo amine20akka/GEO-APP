@@ -153,6 +153,7 @@ export class LayersService {
           { auth: { username: 'admin', password: 'geoserver' } }
         );
         features = new GeoJSON().readFeatures(featureResponse.data);
+        features.forEach(feature => feature.set('type', 'Feature'));
         vectorSource.addFeatures(features);
       } else if (layerDetails.type === 'RASTER') {
         layer = new TileLayer({
