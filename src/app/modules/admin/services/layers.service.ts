@@ -32,6 +32,22 @@ export class LayersService {
     return this.layersSubject.value.find(layer => layer.name === name);
   }
 
+  getLayerByType(type: string): CustomLayer | undefined {
+    return this.layersSubject.value.find(layer => layer.type === type);
+  }
+
+  getLayerBySource(source: string): CustomLayer | undefined {
+    return this.layersSubject.value.find(layer => layer.source === source);
+  }
+
+  getLayersByTypeFromList(layers: CustomLayer[], type: string): CustomLayer | undefined {
+    return layers.find(layer => layer.type === type);
+  }
+
+  getLayersBySourceFromList(layers: CustomLayer[], source: string): CustomLayer | undefined {
+    return layers.find(layer => layer.source === source);
+  }
+
   exists(customLayerFeatures: Feature[]): boolean {
     return this.layersSubject.value.some(layer => 
       this.areFeatureArraysEquivalent(layer.features, customLayerFeatures)
@@ -153,7 +169,11 @@ export class LayersService {
           { auth: { username: 'admin', password: 'geoserver' } }
         );
         features = new GeoJSON().readFeatures(featureResponse.data);
-        features.forEach(feature => feature.set('type', 'Feature'));
+        features.forEach(feature => {
+          feature.set('_layerName_$', layerDetails.name);
+          feature.set('_type_$', 'Feature')
+        });
+
         vectorSource.addFeatures(features);
       } else if (layerDetails.type === 'RASTER') {
         layer = new TileLayer({

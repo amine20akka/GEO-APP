@@ -104,6 +104,19 @@
   transform: translate(0, 0);
 }
 
+.feature-properties-header {
+  display: flex;
+  align-items: center;
+  justify-content: start;
+  text-align: center;
+  padding: 6px;
+}
+
+#feature-layer-title {
+  font-weight: bold;
+  color: #ffffff;
+}
+
 .feature-properties-table {
   width: 100%;
   border-collapse: collapse;
@@ -119,4 +132,12 @@
   color: #f1f1f1;
   width: auto;
   padding: 8px;
+}
+
+.divider {
+  display: flex;
+  margin: 2px 0;
+  border: 0.1px solid #dfdfdf;
+  size: 1px;
+  opacity: 0.6;
 }

@@ -147,7 +147,12 @@ export class ImportDialogComponent implements OnInit {
   }
 
   importFile(): void {
-    this.preparedFeatures.forEach(feature => feature.set('type', 'Feature'));
+    this.preparedFeatures.forEach(feature => {
+      if (this.layerName.trim() !== '') {
+        feature.set('_layerName_$', this.layerName);
+      }
+      feature.set('_type_$', 'Feature')
+    });
     if (this.preparedFeatures.length > 0 && this.layerName.trim() !== '') {
       const isAdded = this.importService.addFeaturesToMap({name: this.layerName, features: this.preparedFeatures});
       if (isAdded) {

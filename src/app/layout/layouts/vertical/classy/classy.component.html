@@ -15,14 +15,34 @@
         </button> -->
         <!-- Components -->
         <div class="ml-auto flex items-center space-x-0.5 pl-2 sm:space-x-2">
-            <circle-measure></circle-measure>
-            <surface-measure></surface-measure>
-            <distance-measure></distance-measure>
+            <!-- Layers Filter Panel -->
+            <button mat-icon-button (click)="toggleFilterPanel()" [matTooltip]="'Filtrer les couches'">
+                <mat-icon [svgIcon]="'heroicons_outline:funnel'"></mat-icon>
+            </button>
+            @if (isFilterPanelVisible) {
+                <app-layers-filter></app-layers-filter>
+            }
+            <!-- Toggle button for measurement panel -->
+            <button mat-icon-button (click)="toggleMeasurementPanel()" matTooltip="Mesures">
+                <mat-icon [svgIcon]="'heroicons_outline:pencil-square'"></mat-icon>
+            </button>
+
+            <!-- Measurement panel -->
+             @if (isMeasurementPanelVisible) {
+                 <div class="measurement-panel">
+                    <circle-measure></circle-measure>
+                    <surface-measure></surface-measure>
+                    <distance-measure></distance-measure>
+                 </div>
+             }
+
             <button mat-icon-button (click)="openFileInput()" [matTooltip]="'Importer une couche'">
                 <mat-icon [svgIcon]="'heroicons_outline:arrow-down-tray'"></mat-icon>
             </button>
-            <button mat-icon-button (click)="geolocate()" [matTooltip]="this._mapService.isGeolocationActive ? 'Désactiver la localisation' : 'Me localiser'">
-                <mat-icon [svgIcon]="this._mapService.isGeolocationActive ? 'heroicons_outline:x-mark' : 'heroicons_outline:map-pin'"></mat-icon>
+            <button mat-icon-button (click)="geolocate()"
+                [matTooltip]="this._mapService.isGeolocationActive ? 'Désactiver la localisation' : 'Me localiser'">
+                <mat-icon
+                    [svgIcon]="this._mapService.isGeolocationActive ? 'heroicons_outline:x-mark' : 'heroicons_outline:map-pin'"></mat-icon>
             </button>
             <fuse-fullscreen class="hidden md:block"></fuse-fullscreen>
             <shortcuts></shortcuts>

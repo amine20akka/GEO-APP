@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import Map from 'ol/Map';
-import { Geolocation, Feature, Overlay } from 'ol';
+import { Geolocation, Feature } from 'ol';
 import View from 'ol/View';
 import TileLayer from 'ol/layer/Tile';
 import OSM from 'ol/source/OSM';
@@ -26,7 +26,6 @@ export class MapService {
   private geolocationLayer: VectorLayer<VectorSource>;
   private geolocation: Geolocation;
   selectInteraction: Select;
-  overlay: Overlay;
 
   constructor() { }
 
@@ -305,52 +304,60 @@ export class MapService {
     this.selectInteraction = new Select({
       condition: pointerMove
     });
-
+  
     // Create the card element dynamically
     const cardElement = document.createElement('mat-card');
     cardElement.className = 'feature-properties-card';
-
+  
     const cardContent = `
+      <mat-card-header class="feature-properties-header">
+        <mat-card-title id="feature-layer-title"></mat-card-title>
+      </mat-card-header>
+      <mat-divider class="divider"></mat-divider>
       <mat-card-content>
-        <table class="feature-properties-table" id="feature-properties-table">
-        </table>
+        <table class="feature-properties-table" id="feature-properties-table"></table>
       </mat-card-content>
+      <mat-divider class="divider"></mat-divider>
     `;
     cardElement.innerHTML = cardContent;
     document.body.appendChild(cardElement); // Add the card to the body
-
-    // Function to update card content
-    const updateCardContent = (properties: { [key: string]: any }) => {
+  
+    // Function to update card content and title
+    const updateCardContent = (properties: { [key: string]: any }, layerName: string) => {
       const tableElement = document.getElementById('feature-properties-table');
+      const titleElement = document.getElementById('feature-layer-title');
+      
       let contentHtml = '';
       for (const [key, value] of Object.entries(properties)) {
-        if (key !== 'geometry') {
+        if (key !== 'geometry' && key !== '_layerName_$' && key !== '_type_$') {
           contentHtml += `<tr><td class="property-key"><strong>${key}:</strong></td><td class="property-value">${value}</td></tr>`;
         }
       }
       tableElement.innerHTML = contentHtml;
+      titleElement.textContent = layerName;
     };
-
+  
     let isHovering = false; // Flag to track hovering state
-
+  
     this.selectInteraction.on('select', (e) => {
       const feature = e.selected[0];
-      if (feature && feature.get('type') === 'Feature') {
+      if (feature && feature.get('_type_$') === 'Feature') {
         const properties = feature.getProperties();
-        updateCardContent(properties);
+        const layerName = feature.get('_layerName_$');
+        updateCardContent(properties, layerName);
         isHovering = true;
       } else {
         isHovering = false;
         cardElement.style.display = 'none';
       }
     });
-
+  
     this.getMap().addInteraction(this.selectInteraction);
-
+  
     // Update card position based on mouse pointer
     this.getMap().on('pointermove', (event) => {
       const feature = this.getMap().forEachFeatureAtPixel(event.pixel, (feature) => feature);
-      if (feature && feature.get('type') === 'Feature') {
+      if (feature && feature.get('_type_$') === 'Feature') {
         // Position the card 2px away from the pointer
         cardElement.style.transform = `translate(${event.pixel[0] + 20}px, ${event.pixel[1] + 20}px)`;
         cardElement.style.display = 'block';
@@ -359,7 +366,7 @@ export class MapService {
         cardElement.style.display = 'none';
       }
     });
-  }
+  }  
 
 
 }

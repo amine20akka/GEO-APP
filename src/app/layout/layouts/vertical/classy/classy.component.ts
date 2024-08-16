@@ -26,8 +26,9 @@ import { Subject, takeUntil } from 'rxjs';
 import { ImportService } from 'app/layout/common/import/import.service';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { CircleComponent } from 'app/layout/common/circle/circle.component';
-import { MatMenuModule } from '@angular/material/menu';
+import { MatMenuModule, MatMenuTrigger } from '@angular/material/menu';
 import { MapService } from 'app/modules/admin/services/map.service';
+import { LayersFilterComponent } from 'app/layout/common/layers-filter/layers-filter.component';
 
 @Component({
     selector: 'classy-layout',
@@ -53,6 +54,7 @@ import { MapService } from 'app/modules/admin/services/map.service';
         DistanceComponent,
         SurfaceComponent,
         CircleComponent,
+        LayersFilterComponent,
     ],
 })
 export class ClassyLayoutComponent implements OnInit, OnDestroy {
@@ -62,6 +64,8 @@ export class ClassyLayoutComponent implements OnInit, OnDestroy {
     navigation: Navigation;
     user: User;
     private _unsubscribeAll: Subject<any> = new Subject<any>();
+    isMeasurementPanelVisible = false;
+    isFilterPanelVisible = false;
 
     /**
      * Constructor
@@ -75,7 +79,7 @@ export class ClassyLayoutComponent implements OnInit, OnDestroy {
         private _fuseNavigationService: FuseNavigationService,
         private _importService: ImportService,
         public _mapService: MapService,
-    ) {}
+    ) { }
 
     // -----------------------------------------------------------------------------------------------------
     // @ Accessors
@@ -131,21 +135,30 @@ export class ClassyLayoutComponent implements OnInit, OnDestroy {
     // -----------------------------------------------------------------------------------------------------
     // @ Public methods
     // -----------------------------------------------------------------------------------------------------
-    
-    openFileInput() : void {
+
+    openFileInput(): void {
         this._importService.openFileInput();
     }
 
-    geolocate() : void {
+    geolocate(): void {
         this._mapService.geolocate();
         this._mapService.isGeolocationActive = !this._mapService.isGeolocationActive;
     }
-    
+
     openShortcuts(): void {
         if (this.shortcutsComponent) {
             this.shortcutsComponent.openPanel();
         }
     }
+
+    toggleMeasurementPanel(): void {
+        this.isMeasurementPanelVisible = !this.isMeasurementPanelVisible;
+    }
+
+    toggleFilterPanel(): void {
+        this.isFilterPanelVisible = !this.isFilterPanelVisible;
+      }
+
     /**
      * Toggle navigation
      *

@@ -2,3 +2,20 @@
 /*  @ Import/write your custom styles here.
 /*  @ Styles from this file will override 'vendors.scss' and Fuse's base styles.
 /* ----------------------------------------------------------------------------------------------------- */
+
+.measurement-panel {
+    position: absolute;
+    top: 70px;
+    right: 10px;
+    z-index: 1000;
+    background-color: white;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+    border-radius: 4px;
+    padding: 10px;
+    display: flex;
+    flex-direction: row;
+  }
+  
+  .measurement-panel button {
+    margin: 5px 0;
+  }  

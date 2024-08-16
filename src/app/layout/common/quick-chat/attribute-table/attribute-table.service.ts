@@ -35,7 +35,7 @@ export class AttributeTableService {
   loadTableData(): void {
     if (this.features.length > 0) {
       const properties = this.features[0].getProperties();
-      this.displayedColumns = Object.keys(properties).filter(key => key !== 'geometry');
+      this.displayedColumns = Object.keys(properties).filter(key => key !== 'geometry' && key !== '_layerName_$' && key !== '_type_$');
       const DATA = this.features.map(feature => feature.getProperties());
       this.dataSource = new MatTableDataSource(DATA);
       this.filteredDataSource = new MatTableDataSource(DATA);
