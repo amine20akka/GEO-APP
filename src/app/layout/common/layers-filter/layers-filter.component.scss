@@ -1,6 +1,5 @@
 .filter-panel {
     position: absolute;
-    font-size: smaller;
     top: 70px;
     right: 10px;
     z-index: 1000;
@@ -23,20 +22,32 @@
   .filter-panel .dialog-title {
     display: flex;
     align-items: center;
-    justify-content: start;
-    padding: 4px;
+    justify-content: center;
+    margin-bottom: 16px;
+    margin-top: 8px;
+    font-size: small;
   }
   
   .filter-panel .dialog-title mat-icon {
     margin-right: 8px;
+    font-size: large;
   }
   
-  .filter-panel form .form-fields {
-    margin-bottom: 10px;
-    width: auto;
+  .form-fields {
+    margin-bottom: 12px;
+    width: 100%;
+  }
+
+  .form-fields mat-label {
+    font-size: smaller;
+  }
+
+  .form-fields mat-select,  .form-fields input{
+    font-size: smaller;
   }
   
   .filter-panel button {
     align-self: flex-end;
+    font-size: smaller;
   }
   

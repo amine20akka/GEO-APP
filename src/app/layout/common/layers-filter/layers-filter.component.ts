@@ -9,7 +9,9 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatDialogModule } from '@angular/material/dialog';
 import { MatButtonModule } from '@angular/material/button';
 import { MatInputModule } from '@angular/material/input';
-
+import { Subject } from 'rxjs';
+import { takeUntil } from 'rxjs/operators';
+import VectorSource from 'ol/source/Vector';
 @Component({
   selector: 'app-layers-filter',
   standalone: true,
@@ -33,8 +35,12 @@ export class LayersFilterComponent {
   columns: string[] = [];
   columnType: string = '';
   isFilterPanelVisible = false; // Visibility control for the filter panel
+  private destroy$ = new Subject<void>();
 
-  constructor(private fb: FormBuilder, private layersService: LayersService) {
+  constructor(
+    private fb: FormBuilder, 
+    private layersService: LayersService, 
+  ) {
     // Initialize the form with validators
     this.filterForm = this.fb.group({
       selectedLayer: ['', Validators.required],
@@ -50,6 +56,11 @@ export class LayersFilterComponent {
     });
   }
 
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
+  }
+
   trackByFn(index: number, item: any): any {
     return item.id || index;
   }
@@ -63,7 +74,6 @@ export class LayersFilterComponent {
 
   onColumnChange(selectedColumn: string): void {
     this.columnType = this.getColumnType(this.selectedLayer, selectedColumn);
-    console.log(this.columnType);
     this.resetFilterControls();
     this.addValidatorsForColumnType();
   }
@@ -81,29 +91,70 @@ export class LayersFilterComponent {
       this.filterForm.get('filterMaxNumber').clearValidators();
     } else if (this.columnType === 'number') {
       this.filterForm.get('filterText').clearValidators();
-      this.filterForm.get('filterMinNumber').setValidators([Validators.required]);
-      this.filterForm.get('filterMaxNumber').setValidators([Validators.required]);
+      this.addNumberValidation();
     }
     this.filterForm.get('filterText').updateValueAndValidity();
     this.filterForm.get('filterMinNumber').updateValueAndValidity();
     this.filterForm.get('filterMaxNumber').updateValueAndValidity();
   }
 
+  addNumberValidation(): void {
+    this.filterForm.get('filterMinNumber').setValidators(Validators.required);
+    this.filterForm.get('filterMaxNumber').setValidators(Validators.required);
+
+    const minControl = this.filterForm.get('filterMinNumber');
+    const maxControl = this.filterForm.get('filterMaxNumber');
+
+    minControl.valueChanges
+      .pipe(takeUntil(this.destroy$))
+      .subscribe((minValue) => {
+        if (this.columnType === 'number') {
+          if (minValue !== null && maxControl.value !== null && minValue > maxControl.value) {
+            maxControl.setValue(minValue);
+          }
+          maxControl.setValidators([Validators.required, Validators.min(minValue)]);
+          maxControl.updateValueAndValidity({ onlySelf: true, emitEvent: false });
+        }
+      });
+
+    maxControl.valueChanges
+      .pipe(takeUntil(this.destroy$))
+      .subscribe((maxValue) => {
+        if (this.columnType === 'number') {
+          if (maxValue !== null && minControl.value !== null && maxValue < minControl.value) {
+            minControl.setValue(maxValue);
+          }
+          minControl.setValidators([Validators.required, Validators.max(maxValue)]);
+          minControl.updateValueAndValidity({ onlySelf: true, emitEvent: false });
+        }
+      });
+  }
+
   onSubmit(): void {
     if (this.filterForm.valid) {
-      const filterValues = this.filterForm.value;
-      // Implement the logic to filter the layers based on filterValues
-      const filteredFeatures = this.selectedLayer.features.filter((feature) => {
+      const selectedColumn = this.filterForm.get('selectedColumn').value;
+      const filterText = this.filterForm.get('filterText').value;
+      const filterMinNumber = this.filterForm.get('filterMinNumber').value;
+      const filterMaxNumber = this.filterForm.get('filterMaxNumber').value;
+      
+      // Implement the logic to filter the layers based on filter values
+      this.selectedLayer.features = this.selectedLayer.features.filter((feature) => {
         const properties = feature.getProperties();
-        const selectedColumnValue = properties[filterValues.selectedColumn];
+        const selectedColumnValue = properties[selectedColumn];
         if (this.columnType === 'string') {
-          return selectedColumnValue.includes(filterValues.filterText);
+          return selectedColumnValue.toString().toLowerCase().includes(filterText.toString().toLowerCase());
         } else if (this.columnType === 'number') {
-          return selectedColumnValue >= filterValues.filterMinNumber && selectedColumnValue <= filterValues.filterMaxNumber;
+          return selectedColumnValue >= filterMinNumber && selectedColumnValue <= filterMaxNumber;
         }
         return true;
       });
-      this.selectedLayer.features = filteredFeatures;
+
+      // Update the source of the selected layer
+      const vectorSource = new VectorSource({
+        features: this.selectedLayer.features
+      });
+
+      this.selectedLayer.layer.setSource(vectorSource);
     }
   }
 
@@ -111,17 +162,22 @@ export class LayersFilterComponent {
     this.filterForm.reset();
     this.columns = [];
     this.columnType = '';
+    // Reset to original layers
+    
   }
 
   getLayerProperties(features: Feature[]): string[] {
-    return features.length > 0 ? Object.keys(features[0].getProperties()) : [];
+    return features.length > 0 ? Object.keys(features[0].getProperties()).filter(key => key !== 'geometry' && key !== '_layerName_$' && key !== '_type_$') : [];
   }
 
   getColumnType(layer: CustomLayer, column: string): string {
     if (layer.features.length > 0) {
       const sampleFeature = layer.features[0].getProperties();
-      return typeof sampleFeature[column];
+      if (typeof sampleFeature[column] === 'number') {
+        return 'number';
+      } else {
+        return 'string';
+      }
     }
-    return '';
   }
 }

@@ -52,7 +52,7 @@
         </div>
         <div mat-dialog-actions>
             <button mat-button type="button" (click)="resetForm()">Réinitailser</button>
-            <button mat-raised-button color="primary" type="submit">Appliquer</button>
+            <button mat-raised-button color="primary" type="submit" [disabled]="!filterForm.valid">Appliquer</button>
         </div>
     </form>
 </div>

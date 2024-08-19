@@ -66,13 +66,7 @@ export class SurfaceComponent implements OnDestroy, AfterViewInit {
 
   ngOnDestroy(): void {
     this.clearOverlays();
-
-    if (this.map) {
-      this.map.removeLayer(this.vector);
-    }
-    if (this.pointerMoveListener) {
-      this.map.un('pointermove', this.pointerMoveListener);
-    }
+    this.clearMeasurement();
   }
 
   private showIndicator(): void {

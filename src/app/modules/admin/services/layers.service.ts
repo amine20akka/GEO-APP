@@ -92,6 +92,9 @@ export class LayersService {
       if (key === 'geometry') {
         return this.areGeometriesSimilar(props1[key], props2[key]);
       }
+      if (key === '_layerName_$' || key === '_type_$') {
+        return true;
+      }
       return props1[key] === props2[key];
     });
   }

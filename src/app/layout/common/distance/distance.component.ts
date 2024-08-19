@@ -102,14 +102,7 @@ export class DistanceComponent implements OnDestroy, AfterViewInit {
     if (container) {
       container.parentNode.removeChild(container);
     }
-
-    if (this.map) {
-      this.map.removeOverlay(this.distanceOverlay);
-      this.hideIndicator();
-      if (this.pointerMoveListener) {
-        this.map.un('pointermove', this.pointerMoveListener);
-      }
-    }
+    this.clearMeasurement();
   }
 
   private showIndicator(): void {
