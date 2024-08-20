@@ -14,23 +14,24 @@ import { Layer } from 'ol/layer';
 import { Source } from 'ol/source';
 import VectorLayer from 'ol/layer/Vector';
 import { MatTooltip } from '@angular/material/tooltip';
+import { defaults as defaultControls, FullScreen } from 'ol/control';
+
 
 @Component({
   selector: 'app-mini-map',
   standalone: true,
-  imports: [MatButtonModule, MatIconModule, CommonModule , MatTooltip],
+  imports: [MatButtonModule, MatIconModule, CommonModule, MatTooltip],
   templateUrl: './mini-map.component.html',
   styleUrls: ['./mini-map.component.scss']
 })
 export class MiniMapComponent implements OnInit, OnChanges, AfterViewInit, OnDestroy {
   @Input() selectedLayer: CustomLayer | null = null;
   @ViewChild('mapElement', { static: false }) mapElement: ElementRef;
-
+   clicked : boolean = false;
   private map: Map | null = null;
   isExpanded: boolean = false;
 
   constructor(private mapService: MapService, private _router: Router) {
-    console.log('MiniMapComponent: constructor');
   }
 
   ngOnInit() {
@@ -43,10 +44,12 @@ export class MiniMapComponent implements OnInit, OnChanges, AfterViewInit, OnDes
   }
 
   ngOnChanges(changes: SimpleChanges) {
-    console.log('MiniMapComponent: ngOnChanges', changes);
-    if (changes.selectedLayer) {
-      console.log('Selected layer changed:', this.selectedLayer);
+    if ( changes.selectedLayer.firstChange) {
+      this.updateLayerStyle();
+    };
+    if(changes.selectedLayer ){
       this.updateMap();
+
     }
   }
 
@@ -72,7 +75,16 @@ export class MiniMapComponent implements OnInit, OnChanges, AfterViewInit, OnDes
         view: new View({
           center: [0, 0],
           zoom: 2
-        })
+        }),
+        controls: defaultControls({
+          zoom: false,
+          attribution: false,
+          rotate: false
+        }).extend([
+          new FullScreen({
+            className: 'ol-full-screen'
+          })
+        ])
       });
       console.log('Map initialized:', this.map);
       if (this.selectedLayer) {
@@ -82,17 +94,44 @@ export class MiniMapComponent implements OnInit, OnChanges, AfterViewInit, OnDes
       console.error('Map element not found');
     }
   }
-
-   private updateMap() {
+  private updateLayerStyle() {
+    if (this.map && this.selectedLayer && this.selectedLayer.layer) {
+      const layers = this.map.getLayers().getArray();
+      const miniMapLayer = layers.find(layer => layer !== this.map.getLayers().item(0)); // Assuming the first layer is the base layer
+      
+      if (miniMapLayer && miniMapLayer instanceof VectorLayer && this.selectedLayer.layer instanceof VectorLayer) {
+        // Update the style of the existing layer
+        miniMapLayer.setStyle(this.selectedLayer.layer.getStyle());
+        this.map.render();
+      }
+    }
+  }
+  private updateMap() {
     console.log('MiniMapComponent: updateMap', this.selectedLayer);
     if (this.map && this.selectedLayer && this.selectedLayer.layer) {
       // Clear existing layers except the base layer
       const layersToRemove = this.map.getLayers().getArray().slice(1);
       layersToRemove.forEach(layer => this.map.removeLayer(layer));
 
-      // Add the new selected layer
-      this.map.addLayer(this.selectedLayer.layer);
-      console.log('Layer added to map:', this.selectedLayer.layer);
+      // Clone the selected layer or create a new layer with the same source
+      let miniMapLayer;
+      if (this.selectedLayer.layer instanceof VectorLayer) {
+        miniMapLayer = new VectorLayer({
+          source: this.selectedLayer.layer.getSource(),
+          style: this.selectedLayer.layer.getStyle()
+        });
+      } else if (this.selectedLayer.layer instanceof TileLayer) {
+        miniMapLayer = new TileLayer({
+          source: this.selectedLayer.layer.getSource()
+        });
+      } else {
+        console.error('Unsupported layer type');
+        return;
+      }
+
+      // Add the cloned layer to the mini-map
+      this.map.addLayer(miniMapLayer);
+      console.log('Cloned layer added to mini-map:', miniMapLayer);
 
       // Determine the extent based on the layer type and available data
       let extent: Extent | undefined;
@@ -100,14 +139,14 @@ export class MiniMapComponent implements OnInit, OnChanges, AfterViewInit, OnDes
       if (this.selectedLayer.type === 'VECTOR' && this.selectedLayer.features.length > 0) {
         extent = this.getExtentFromFeatures(this.selectedLayer.features);
       } else if (this.selectedLayer.type === 'RASTER') {
-        extent = this.getExtentFromRasterLayer(this.selectedLayer.layer);
+        extent = this.getExtentFromRasterLayer(miniMapLayer);
       }
 
       console.log('Calculated extent:', extent);
 
       if (extent && !extent.every(v => v === Infinity || v === -Infinity)) {
-        this.map.getView().fit(extent, { 
-          padding: [50, 50, 50, 50], 
+        this.map.getView().fit(extent, {
+          padding: [50, 50, 50, 50],
           maxZoom: 19,
           duration: 1000  // Add smooth animation
         });
@@ -131,14 +170,7 @@ export class MiniMapComponent implements OnInit, OnChanges, AfterViewInit, OnDes
     }
   }
 
-  private resetMapView() {
-    if (this.map) {
-      this.map.getView().setCenter([0, 0]);
-      this.map.getView().setZoom(2);
-      this.updateMapSize();
-      console.log('Map view reset to default');
-    }
-  }
+
 
   private updateMapSize() {
     if (this.map) {
@@ -186,4 +218,5 @@ export class MiniMapComponent implements OnInit, OnChanges, AfterViewInit, OnDes
       }
     }, 100);
   }
+  
 }

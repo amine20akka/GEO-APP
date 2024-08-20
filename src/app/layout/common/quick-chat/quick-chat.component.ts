@@ -1,6 +1,8 @@
 import { ScrollStrategy, ScrollStrategyOptions } from '@angular/cdk/overlay';
 import { TextFieldModule } from '@angular/cdk/text-field';
 import { DatePipe, NgClass, NgTemplateOutlet, PercentPipe } from '@angular/common';
+import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
+import { MatIconRegistry } from '@angular/material/icon';
 import {
     Component,
     ElementRef,
@@ -49,6 +51,9 @@ import VectorSource from 'ol/source/Vector';
 import { Extent } from 'ol/extent';
 import { MiniMapComponent } from 'app/modules/admin/dashboards/mini-map/mini-map.component';
 import { Router, RouterModule } from '@angular/router';
+import { Layer } from 'ol/layer';
+import { ImageWMS, Source, TileWMS } from 'ol/source';
+import CircleStyle from 'ol/style/Circle';
 
 @Component({
     selector: 'quick-chat',
@@ -80,7 +85,7 @@ import { Router, RouterModule } from '@angular/router';
         MatExpansionModule,
         MatSelectModule,
         CommonModule,
-        MiniMapComponent ,
+        MiniMapComponent,
         RouterModule
     ],
 })
@@ -99,7 +104,7 @@ export class QuickChatComponent implements OnInit, OnDestroy, AfterViewInit {
     miniMap: Map | null = null;
 
 
-   
+
     opened: boolean = false;
     clicked: boolean = false;
     draggedOverIndex: number | null = null;
@@ -114,6 +119,15 @@ export class QuickChatComponent implements OnInit, OnDestroy, AfterViewInit {
         { value: 'pin', label: 'Pin', icon: 'place' },
         // { value: 'triangle', label: 'Triangle', icon: 'change_history' },
     ];
+    HavailableSymbols = [
+        { value: 'circle', label: 'Point', icon: 'radio_button_unchecked' },
+        { value: 'multipoint', label: 'MultiPoint', icon: 'group_work' },
+        { value: 'linestring', label: 'LineString', icon: 'show_chart' },
+        { value: 'multilinestring', label: 'MultiLineString', icon: 'timeline' },
+        { value: 'polygon', label: 'Polygon', icon: 'change_history' },
+        { value: 'multipolygon', label: 'MultiPolygon', icon: 'dashboard' },
+        { value: 'collection', label: 'GeometryCollection', icon: 'layers' },
+      ];
 
     selectedSymbol: string = 'circle';
     symbolSize: number = 24;
@@ -123,7 +137,7 @@ export class QuickChatComponent implements OnInit, OnDestroy, AfterViewInit {
     private _scrollStrategy: ScrollStrategy;
     private _overlay: HTMLElement;
     private _unsubscribeAll: Subject<any> = new Subject<any>();
-     @HostListener('document:keydown', ['$event'])
+    @HostListener('document:keydown', ['$event'])
     @HostListener('document:keyup', ['$event'])
     handleKeyEvent(event: KeyboardEvent) {
         if (event.key === 'Shift') {
@@ -145,11 +159,16 @@ export class QuickChatComponent implements OnInit, OnDestroy, AfterViewInit {
         private _mapService: MapService,
         private _changeDetectorRef: ChangeDetectorRef,
         private _ngZone: NgZone,
-        private _router: Router
+        private _router: Router,
+        private sanitizer: DomSanitizer
+
+        
+        
 
     ) {
         this._scrollStrategy = this._scrollStrategyOptions.block();
         console.log('QuickChatComponent constructor called');
+
 
     }
 
@@ -158,24 +177,23 @@ export class QuickChatComponent implements OnInit, OnDestroy, AfterViewInit {
             'quick-chat-opened': this.opened,
         };
     }
+    //verif loading of all layers
+    arLayersLoaded(): boolean {
+        return this.layers && this.layers.length > 0;
+    }
 
     ngOnInit(): void {
-        console.log('ngOnInit called');
-        this.layersSubscription = this._layersService.layers$.subscribe(layers => {
-            console.log('Layers received:', layers);
-            this.layers = layers;
-            if (layers.length > 0 && !this.selectedLayer) {
-                this.selectedLayer = layers[0];
-                this._changeDetectorRef.detectChanges();
-            }
-        });
-    }
+    this.layersSubscription = this._layersService.layers$.subscribe(layers => {
+      this.layers = layers;
+      this._changeDetectorRef.detectChanges();
+    });
+  }
 
     ngAfterViewInit() {
         console.log('ngAfterViewInit called');
         setTimeout(() => {
             console.log('mapContainer:', this.mapContainer);
-            
+
         });
     }
 
@@ -188,164 +206,113 @@ export class QuickChatComponent implements OnInit, OnDestroy, AfterViewInit {
             this.miniMap.setTarget(undefined);
         }
     }
-
+      // Nouvelle méthode pour obtenir la légende OpenLayers
+      getOpenLayersLegend(layer: CustomLayer): SafeHtml {
+            
+        return this._layersService.getOpenLayersLegend(layer);
+    }
     
+    //   generateSvgLegend(geometryType: string, fillColor: string, strokeColor: string, strokeWidth: number): string {
+    //     const size = 20;
+    //     let svg = '';
+    
+    //     switch (geometryType) {
+    //       case 'Point':
+    //         svg = `<svg width="${size}" height="${size}" xmlns="http://www.w3.org/2000/svg">
+    //                  <circle cx="${size/2}" cy="${size/2}" r="${size/4}" fill="${fillColor}" stroke="${strokeColor}" stroke-width="${strokeWidth}" />
+    //                </svg>`;
+    //         break;
+    //       case 'LineString':
+    //       case 'MultiLineString':
+    //         svg = `<svg width="${size}" height="${size}" xmlns="http://www.w3.org/2000/svg">
+    //                  <line x1="0" y1="${size/2}" x2="${size}" y2="${size/2}" stroke="${strokeColor}" stroke-width="${strokeWidth}" />
+    //                </svg>`;
+    //         break;
+    //       case 'Polygon':
+    //       case 'MultiPolygon':
+    //         svg = `<svg width="${size}" height="${size}" xmlns="http://www.w3.org/2000/svg">
+    //                  <rect x="2" y="2" width="${size-4}" height="${size-4}" fill="${fillColor}" stroke="${strokeColor}" stroke-width="${strokeWidth}" />
+    //                </svg>`;
+    //         break;
+    //       default:
+    //         svg = `<svg width="${size}" height="${size}" xmlns="http://www.w3.org/2000/svg">
+    //                  <text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" font-size="14">${geometryType[0]}</text>
+    //                </svg>`;
+    //     }
+    
+    //     return svg;
+    //   }
+    
+    //   generateSvgLegend(geometryType: string, color: string): string {
+    //     const size = 20;
+    //     let svg = '';
+    
+    //     switch (geometryType) {
+    //       case 'Point':
+    //         svg = `<svg width="${size}" height="${size}" xmlns="http://www.w3.org/2000/svg">
+    //                  <circle cx="${size/2}" cy="${size/2}" r="${size/4}" fill="${color}" />
+    //                </svg>`;
+    //         break;
+    //       case 'LineString':
+    //         svg = `<svg width="${size}" height="${size}" xmlns="http://www.w3.org/2000/svg">
+    //                  <line x1="0" y1="${size/2}" x2="${size}" y2="${size/2}" stroke="${color}" stroke-width="2" />
+    //                </svg>`;
+    //         break;
+    //       case 'Polygon':
+    //         svg = `<svg width="${size}" height="${size}" xmlns="http://www.w3.org/2000/svg">
+    //                  <rect x="2" y="2" width="${size-4}" height="${size-4}" fill="${color}" />
+    //                </svg>`;
+    //         break;
+    //       default:
+    //         svg = `<svg width="${size}" height="${size}" xmlns="http://www.w3.org/2000/svg">
+    //                  <text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" font-size="14">${geometryType[0]}</text>
+    //                </svg>`;
+    //     }
+    
+    //     return svg;
+    //   }
+    
+
+//manage clicks for opened and closed menu
     handleLayerClick(layer: CustomLayer, event: MouseEvent) {
         if (this.opened && !this.isShiftPressed) {
             this.selectLayer(layer);
-        } else {
-            this.onLayerVisibilityChange(layer.id);
+        } else if (this.opened && this.isShiftPressed ) {
+            this.toggleLayerVisibility(layer);
+
+
+
+        }
+        else{
+            this.toggleLayerVisibility(layer);
         }
     }
-   // private calculateMapOffset() {
-    //     if (this.mapContainer && this.mapContainer.nativeElement) {
-    //         this.mapOffset = this.mapContainer.nativeElement.offsetTop;
-    //         console.log('Map offset calculated:', this.mapOffset);
-    //     } else {
-    //         console.log('Map container not found');
-    //     }
-    // }
 
-    // handleScroll() {
-    //     console.log('handleScroll called');
-    //     if (!this.expansionPanel || !this.scrollContainer) {
-    //         console.log('expansionPanel or scrollContainer not available');
-    //         return;
-    //     }
+   
 
-    //     const scrollTop = this.scrollContainer.nativeElement.scrollTop;
-    //     console.log('Scroll top:', scrollTop, 'Map offset:', this.mapOffset);
-    //     if (this.expansionPanel.expanded) {
-    //         this.isMapSticky = scrollTop > this.mapOffset;
-    //         console.log('Is map sticky:', this.isMapSticky);
-    //     } else {
-    //         this.isMapSticky = false;
-    //     }
-    //     this._changeDetectorRef.detectChanges();
-    // }
+    toggleLayerVisibility(layer: CustomLayer): void {
 
-    // panelOpened() {
-    //     console.log('Panel opened');
-    //     setTimeout(() => {
-    //         this.calculateMapOffset();
-    //         this.handleScroll();
-    //     }, 0);
-    // }
-
-    // panelClosed() {
-    //     console.log('Panel closed');
-    //     this.isMapSticky = false;
-    //     this._changeDetectorRef.detectChanges();
-    // }
-
-    // @HostListener('window:scroll', ['$event'])
-    // @HostListener('window:resize', ['$event'])
-    // onWindowScroll() {
-    //     this.handleScroll();
-    // }
-
-    // private calculateMapOffset() {
-    //     if (this.mapContainer && this.mapContainer.nativeElement) {
-    //         this.mapOffset = this.mapContainer.nativeElement.offsetTop;
-    //     }
-    // }
-
-    // private handleScroll = (): void => {
-    //     if (!this.expansionPanel || !this.scrollContainer) return;
-
-    //     const scrollTop = this.scrollContainer.nativeElement.scrollTop;
-    //     if (this.expansionPanel.expanded) {
-    //         this.isMapSticky = scrollTop > this.mapOffset;
-    //     } else {
-    //         this.isMapSticky = false;
-    //     }
-    //     this._ngZone.run(() => this._changeDetectorRef.detectChanges());
-    // }
-
-    // panelOpened() {
-    //     setTimeout(() => {
-    //         this.calculateMapOffset();
-    //         this.handleScroll();
-    //     }, 0);
-    // }
-
-    // panelClosed() {
-    //     this.isMapSticky = false;
-    //     this._changeDetectorRef.detectChanges();
-    // }
-
-    // private initMap() {
-    //     if (this.selectedLayer) {
-    //         setTimeout(() => {
-    //             const map = this._mapService.initializeMap('mini-map');
-    //             if (map && this.selectedLayer.layer) {
-    //                 map.addLayer(this.selectedLayer.layer);
-    //                 const source = this.selectedLayer.layer.getSource();
-    //                 if (source instanceof VectorSource) {
-    //                     const extent = source.getExtent();
-    //                     if (extent && !extent.every(v => v === Infinity || v === -Infinity)) {
-    //                         map.getView().fit(extent, { padding: [20, 20, 20, 20] });
-    //                     } else {
-    //                         map.getView().setZoom(2);
-    //                         map.getView().setCenter([0, 0]);
-    //                     }
-    //                 } else {
-    //                     // For non-vector sources, set a default view
-    //                     map.getView().setZoom(2);
-    //                     map.getView().setCenter([0, 0]);
-    //                 }
-    //             }
-    //         }, 0);
-    //     }
-    // }
-
-
-//verify the loading of layers
-    
-
-
-arLayersLoaded(): boolean {
-        return this.layers && this.layers.length > 0;
+        console.log('Toggling layer visibility:', layer);
+        this.onLayerVisibilityChange(layer.id);
     }
 
+    selectLayer(layer: CustomLayer): void {
+            {
+        console.log('Selecting layer:', layer.name);
+        this.MMapselectedLayer = layer;
+        this.selectedLayer = layer; 
+        this._changeDetectorRef.detectChanges();
+    }
+    }
 
-  // Add this method to handle principal map layer selection
-//   selectPrincipalMapLayer(layer: CustomLayer): void {
-//     console.log('Selecting layer for principal map:', layer);
-//     this.selectedLayer = layer;
-//     this._layersService.onLayerVisibilityChange(layer.id);
-//     this._changeDetectorRef.detectChanges();
-//   }
-  toggleLayerVisibility(layer: CustomLayer): void {
-    console.log('Toggling layer visibility:', layer);
-    this.onLayerVisibilityChange(layer.id);
-  }
-selectLayer(layer: CustomLayer): void {
-    console.log('Selecting layer:', layer.name);
-    this.MMapselectedLayer = layer;
-    this.selectedLayer = layer; // Ensure both are updated
-    this._changeDetectorRef.detectChanges();
-}
-
-onLayerVisibilityChange(layerId: string): void {
-    console.log('Toggling layer visibility:', layerId);
-    this._layersService.onLayerVisibilityChange(layerId);
-}
-// handleLayerClick(layer: CustomLayer, event: MouseEvent) {
-//     console.log('Layer clicked:', layer.name, 'Opened:', this.opened, 'Shift pressed:', this.isShiftPressed);
+    onLayerVisibilityChange(layerId: string): void {
+        console.log('Toggling layer visibility:', layerId);
+        this._layersService.onLayerVisibilityChange(layerId);
+    }
     
-//     if (!this.opened || (this.opened && this.isShiftPressed)) {
-//         // Toggle layer visibility only when panel is closed or Shift is pressed while panel is open
-//         this.onLayerVisibilityChange(layer.id);
-//     } else if (this.opened) {
-//         // Select layer for mini-map when panel is open and Shift is not pressed
-//         this.selectLayer(layer);
-//     }
     
-//     this._changeDetectorRef.detectChanges();
-// }
 
-//DRAG AND DROP METHODS
+    //DRAG AND DROP METHODS
     onDragStart(event: DragEvent, index: number) {
         event.dataTransfer.setData('text/plain', index.toString());
         this.draggedOverIndex = null;
@@ -370,8 +337,8 @@ onLayerVisibilityChange(layerId: string): void {
 
     deleteLayer(index: number) {
         const layerToDelete = this.layers[index];
-// this._mapService.getMap().subscribe(map => map.removeLayer(layerToDelete.layer));
-this._mapService.getMap().removeLayer(layerToDelete.layer);
+        // this._mapService.getMap().subscribe(map => map.removeLayer(layerToDelete.layer));
+        this._mapService.getMap().removeLayer(layerToDelete.layer);
 
         this.layers = [...this.layers.slice(0, index), ...this.layers.slice(index + 1)];
 
@@ -427,7 +394,7 @@ this._mapService.getMap().removeLayer(layerToDelete.layer);
 
 
 
-//STYLE MANAGEMENT METHODS
+    //STYLE MANAGEMENT METHODS
     //COLOR METHODS
     getLayerColor(): string {
         if (!this.MMapselectedLayer || !(this.MMapselectedLayer.style instanceof Style)) {
@@ -455,7 +422,7 @@ this._mapService.getMap().removeLayer(layerToDelete.layer);
 
         return '#000000';
     }
-      //the initial value from geoserver
+    //the initial value from geoserver
     getSelectedLayerColor(): string {
         if (this.MMapselectedLayer && this.MMapselectedLayer.inStyle) {
             const fill = this.MMapselectedLayer.inStyle.getFill();
@@ -479,14 +446,14 @@ this._mapService.getMap().removeLayer(layerToDelete.layer);
         }
         return '#000000';
     }
-      //button reset to initial color
+    //button reset to initial color
     resetToInitialColor(): void {
         if (this.MMapselectedLayer) {
             const initialColor = this.getSelectedLayerColor();
             this.updateLayerColor(initialColor);
         }
     }
-      //Saving color
+    //Saving color
     // updateLayerColor(color: string): void {
     //     if (!this.MMapselectedLayer || !(this.MMapselectedLayer.style instanceof Style)) {
     //         console.error('Invalid layer or style');
@@ -527,8 +494,148 @@ this._mapService.getMap().removeLayer(layerToDelete.layer);
 
     //     this.applyNewStyle(newStyle);
     // }
+    updateLayerColor(color: string): void {
+        if (!this.MMapselectedLayer || !(this.MMapselectedLayer.style instanceof Style)) {
+            console.error('Invalid layer or style');
+            return;
+        }
 
-     
+        const currentStyle = this.MMapselectedLayer.style;
+        const geometryType = this.getGeometryType(this.MMapselectedLayer);
+        let newStyle: Style;
+
+        switch (geometryType) {
+            case 'Point':
+            case 'MultiPoint':
+                const currentImage = currentStyle.getImage();
+                if (currentImage instanceof Circle) {
+                    newStyle = new Style({
+                        image: new Circle({
+                            radius: currentImage.getRadius(),
+                            fill: new Fill({ color }),
+                            stroke: currentImage.getStroke()
+                        })
+                    });
+                } else {
+                    newStyle = currentStyle;
+                }
+                break;
+            case 'LineString':
+            case 'MultiLineString':
+                newStyle = new Style({
+                    stroke: new Stroke({ color, width: currentStyle.getStroke()?.getWidth() || 1 })
+                });
+                break;
+            default:
+                newStyle = new Style({
+                    fill: new Fill({ color }),
+                    stroke: currentStyle.getStroke()
+                });
+        }
+
+        this.applyNewStyle(newStyle);
+    }
+
+    private applyNewStyle(newStyle: Style): void {
+        // if (this.preview){
+        //     if (this.MMapselectedLayer && this.MMapselectedLayer.layer instanceof VectorLayer) {
+        //         this.MMapselectedLayer.style = newStyle;
+        //         this.MMapselectedLayer.layer.setStyle(() => newStyle);
+        //         this.MMapselectedLayer.layer.changed();
+        //     }
+        // }
+        // else{
+        if (!this.preview){
+
+        // Apply the same style to the selectedLayer (principal map)
+        if (this.selectedLayer && this.selectedLayer.layer instanceof VectorLayer) {
+          this.selectedLayer.style = newStyle;
+          this.selectedLayer.layer.setStyle(() => newStyle);
+          this.selectedLayer.layer.changed();
+    
+          // Create a new reference to trigger ngOnChanges in MiniMapComponent
+          this.MMapselectedLayer = { ...this.MMapselectedLayer };
+        }
+    }
+    
+        // Render the main map
+        this._mapService.getMap().render();
+    
+        // Optionally, save the style to local storage or your backend
+        // this._styleService.saveStyle(this.MMapselectedLayer.name, newStyle);
+      }
+
+    updateLayerStrokeColor(color: string): void {
+        if (!this.MMapselectedLayer || !(this.MMapselectedLayer.style instanceof Style)) {
+            console.error('Invalid layer or style');
+            return;
+        }
+
+        const currentStyle = this.MMapselectedLayer.style;
+        const geometryType = this.getGeometryType(this.MMapselectedLayer);
+        let newStyle: Style;
+
+        if (geometryType === 'Point' || geometryType === 'MultiPoint') {
+            const currentImage = currentStyle.getImage();
+            if (currentImage instanceof Circle) {
+                newStyle = new Style({
+                    image: new Circle({
+                        radius: currentImage.getRadius(),
+                        fill: currentImage.getFill(),
+                        stroke: new Stroke({ color, width: this.getLayerStrokeWidth() })
+                    })
+                });
+            } else {
+                newStyle = currentStyle;
+            }
+        } else {
+            newStyle = new Style({
+                fill: currentStyle.getFill(),
+                stroke: new Stroke({ color, width: this.getLayerStrokeWidth() })
+            });
+        }
+
+        this.applyNewStyle(newStyle);
+    }
+
+    updateLayerStrokeWidth(width: number): void {
+        if (!this.MMapselectedLayer || !(this.MMapselectedLayer.style instanceof Style)) {
+            console.error('Invalid layer or style');
+            return;
+        }
+
+        const currentStyle = this.MMapselectedLayer.style;
+        const geometryType = this.getGeometryType(this.MMapselectedLayer);
+        let newStyle: Style;
+
+        if (geometryType === 'Point' || geometryType === 'MultiPoint') {
+            const currentImage = currentStyle.getImage();
+            if (currentImage instanceof Circle) {
+                newStyle = new Style({
+                    image: new Circle({
+                        radius: currentImage.getRadius(),
+                        fill: currentImage.getFill(),
+                        stroke: new Stroke({
+                            color: currentImage.getStroke() ? currentImage.getStroke().getColor() : 'black',
+                            width: width
+                        })
+                    })
+                });
+            } else {
+                newStyle = currentStyle;
+            }
+        } else {
+            newStyle = new Style({
+                fill: currentStyle.getFill(),
+                stroke: new Stroke({
+                    color: currentStyle.getStroke() ? currentStyle.getStroke().getColor() : 'black',
+                    width: width
+                })
+            });
+        }
+
+        this.applyNewStyle(newStyle);
+    }
     //OPACITY METHODS
     updateLayerOpacity(opacity: number): void {
         if (this.MMapselectedLayer && this.MMapselectedLayer.layer) {
@@ -670,8 +777,12 @@ this._mapService.getMap().removeLayer(layerToDelete.layer);
 
     //     this.applyNewStyle(newStyle);
     // }
-    
+
     //SYMBOLOGY METHODS
+    getGeometryIcon(geometryType: string): string {
+        const symbol = this.HavailableSymbols.find(s => s.label.toLowerCase() === geometryType.toLowerCase());
+        return symbol ? symbol.icon : 'help_outline';
+      }
     getSelectedSymbolIcon(): string {
         const symbol = this.availableSymbols.find(s => s.value === this.selectedSymbol);
         console.log('Selected Symbol Icon:', symbol?.icon);
@@ -722,7 +833,7 @@ this._mapService.getMap().removeLayer(layerToDelete.layer);
             console.error('[updateLayerSymbol] No layer selected');
             return;
         }
-    
+
         if (this.MMapselectedLayer.layer instanceof VectorLayer) {
             const newStyle = this.createPointSymbolStyle();
             this.applyNewStyle(newStyle);
@@ -743,6 +854,7 @@ this._mapService.getMap().removeLayer(layerToDelete.layer);
                 return '';
         }
     }
+    
     // private applyNewStyle(newStyle: Style): void {
     //     if (this.MMapselectedLayer && this.MMapselectedLayer.layer instanceof VectorLayer) {
     //         this.MMapselectedLayer.style = newStyle;
@@ -753,37 +865,25 @@ this._mapService.getMap().removeLayer(layerToDelete.layer);
     //     // Optionally, save the style to local storage or your backend
     //     // this._styleService.saveStyle(this.MMapselectedLayer.name, newStyle);
     // }
+
+    //htmldisplay
+   
+    // getGeometryIcon(geometryType: string): string {
+    //     const iconMap: { [key: string]: string } = {
+    //       'Point': 'geo-point',
+    //       'MultiPoint': 'geo-multipoint',
+    //       'LineString': 'geo-linestring',
+    //       'MultiLineString': 'geo-multilinestring',
+    //       'Polygon': 'geo-polygon',
+    //       'MultiPolygon': 'geo-multipolygon',
+    //       'GeometryCollection': 'geo-collection'
+    //     };
+    
+    //     return iconMap[geometryType] || 'help_outline';
+    //   }
     //display geometry with lisible format
     getGeometryType(layer: CustomLayer): string {
-        if (layer && layer.layer instanceof VectorLayer) {
-            const source = layer.layer.getSource();
-            const features = source.getFeatures();
-
-            if (features.length > 0) {
-                const geometry = features[0].getGeometry();
-                if (geometry instanceof Point) return 'Point';
-                if (geometry instanceof MultiPoint) return 'MultiPoint';
-                if (geometry instanceof LineString) return 'LineString';
-                if (geometry instanceof MultiLineString) return 'MultiLineString';
-                if (geometry instanceof Polygon) return 'Polygon';
-                if (geometry instanceof MultiPolygon) return 'MultiPolygon';
-                if (geometry instanceof GeometryCollection) return 'GeometryCollection';
-
-                return geometry ? geometry.getType() : 'Unknown';
-            } else {
-                const style = layer.layer.getStyle();
-                if (typeof style === 'function') {
-                    const dummyFeature = new Feature();
-                    const appliedStyle = style(dummyFeature, 1);
-                    if (appliedStyle instanceof Style) {
-                        if (appliedStyle.getImage()) return 'Point';
-                        if (appliedStyle.getStroke() && !appliedStyle.getFill()) return 'LineString';
-                        if (appliedStyle.getFill()) return 'Polygon';
-                    }
-                }
-            }
-        }
-        return 'Unknown';
+        return this._layersService.getGeometryType(layer)
     }
 
     formatLayerName(name: string): string {
@@ -816,6 +916,11 @@ this._mapService.getMap().removeLayer(layerToDelete.layer);
     }
 
     toggle(): void {
+        if (this.opened) {
+            // Clear the selected layer when closing the panel
+            this.selectedLayer = null;
+            this.MMapselectedLayer = null; // Also clear this if you're using it
+        }
         this._toggleOpened(!this.opened);
     }
 
@@ -857,141 +962,48 @@ this._mapService.getMap().removeLayer(layerToDelete.layer);
     }
 
     //try
-    updateLayerColor(color: string): void {
-        if (!this.MMapselectedLayer || !(this.MMapselectedLayer.style instanceof Style)) {
-            console.error('Invalid layer or style');
-            return;
+    isExpandedView: boolean = false;
+    // toggleExpandedView(event: Event): void {
+    //     event.stopPropagation();
+    //     this.isExpandedView = !this.isExpandedView;
+        
+    //     this._changeDetectorRef.markForCheck();
+    //   }
+
+    toggleExpandedView(): void {
+        this.isExpandedView = !this.isExpandedView;
+      }
+
+      expanded = false;
+
+      toggleExpanded() {
+        if (!this.opened) {
+          this.expanded = !this.expanded;
         }
-    
-        const currentStyle = this.MMapselectedLayer.style;
-        const geometryType = this.getGeometryType(this.MMapselectedLayer);
-        let newStyle: Style;
-    
-        switch (geometryType) {
-            case 'Point':
-            case 'MultiPoint':
-                const currentImage = currentStyle.getImage();
-                if (currentImage instanceof Circle) {
-                    newStyle = new Style({
-                        image: new Circle({
-                            radius: currentImage.getRadius(),
-                            fill: new Fill({ color }),
-                            stroke: currentImage.getStroke()
-                        })
-                    });
-                } else {
-                    newStyle = currentStyle;
-                }
-                break;
-            case 'LineString':
-            case 'MultiLineString':
-                newStyle = new Style({
-                    stroke: new Stroke({ color, width: currentStyle.getStroke()?.getWidth() || 1 })
-                });
-                break;
-            default:
-                newStyle = new Style({
-                    fill: new Fill({ color }),
-                    stroke: currentStyle.getStroke()
-                });
-        }
-    
-        this.applyNewStyle(newStyle);
-    }
-    
-    private applyNewStyle(newStyle: Style): void {
-        if (this.MMapselectedLayer && this.MMapselectedLayer.layer instanceof VectorLayer) {
-            this.MMapselectedLayer.style = newStyle;
-            this.MMapselectedLayer.layer.setStyle(() => newStyle);
-            this.MMapselectedLayer.layer.changed();
-        }
-    
-        // Apply the same style to the selectedLayer (principal map)
-        if (this.selectedLayer && this.selectedLayer.layer instanceof VectorLayer) {
-            this.selectedLayer.style = newStyle;
-            this.selectedLayer.layer.setStyle(() => newStyle);
-            this.selectedLayer.layer.changed();
-        }
-    
-        // Render both maps
-        this._mapService.getMap().render();
-        if (this.miniMap) {
-            this.miniMap.render();
-        }
-    
-        // Optionally, save the style to local storage or your backend
-        // this._styleService.saveStyle(this.MMapselectedLayer.name, newStyle);
-    }
-    
-    updateLayerStrokeColor(color: string): void {
-        if (!this.MMapselectedLayer || !(this.MMapselectedLayer.style instanceof Style)) {
-            console.error('Invalid layer or style');
-            return;
-        }
-    
-        const currentStyle = this.MMapselectedLayer.style;
-        const geometryType = this.getGeometryType(this.MMapselectedLayer);
-        let newStyle: Style;
-    
-        if (geometryType === 'Point' || geometryType === 'MultiPoint') {
-            const currentImage = currentStyle.getImage();
-            if (currentImage instanceof Circle) {
-                newStyle = new Style({
-                    image: new Circle({
-                        radius: currentImage.getRadius(),
-                        fill: currentImage.getFill(),
-                        stroke: new Stroke({ color, width: this.getLayerStrokeWidth() })
-                    })
-                });
-            } else {
-                newStyle = currentStyle;
-            }
-        } else {
-            newStyle = new Style({
-                fill: currentStyle.getFill(),
-                stroke: new Stroke({ color, width: this.getLayerStrokeWidth() })
-            });
-        }
-    
-        this.applyNewStyle(newStyle);
-    }
-    
-    updateLayerStrokeWidth(width: number): void {
-        if (!this.MMapselectedLayer || !(this.MMapselectedLayer.style instanceof Style)) {
-            console.error('Invalid layer or style');
-            return;
-        }
-    
-        const currentStyle = this.MMapselectedLayer.style;
-        const geometryType = this.getGeometryType(this.MMapselectedLayer);
-        let newStyle: Style;
-    
-        if (geometryType === 'Point' || geometryType === 'MultiPoint') {
-            const currentImage = currentStyle.getImage();
-            if (currentImage instanceof Circle) {
-                newStyle = new Style({
-                    image: new Circle({
-                        radius: currentImage.getRadius(),
-                        fill: currentImage.getFill(),
-                        stroke: new Stroke({
-                            color: currentImage.getStroke() ? currentImage.getStroke().getColor() : 'black',
-                            width: width
-                        })
-                    })
-                });
-            } else {
-                newStyle = currentStyle;
-            }
-        } else {
-            newStyle = new Style({
-                fill: currentStyle.getFill(),
-                stroke: new Stroke({
-                    color: currentStyle.getStroke() ? currentStyle.getStroke().getColor() : 'black',
-                    width: width
-                })
-            });
-        }
-    
-        this.applyNewStyle(newStyle);
-    }
+      }
+/////////////////////tools
+preview = false; // Initially false
+savepressed = false;
+
+togglePreviewMode() {
+  this.preview = !this.preview;
+  console.log(`Preview Mode is now ${this.preview ? 'activated' : 'deactivated'}`);
 }
+
+goBackward() {
+  console.log('Navigating backward');
+}
+
+saveMapState() {
+  console.log('Map state saved');
+}
+
+goForward() {
+  console.log('Navigating forward');
+}
+
+navigateToMiniMap() {
+  console.log('Navigating to Mini Map');
+}
+}
+    
