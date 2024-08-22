@@ -56,6 +56,7 @@
                         <h3
                             class="text-xs mb-2 py-1 text-center font-semibold tracking-wider text-gray-500 border-b border-gray-200">
                             Couches GeoServer</h3>
+                        @if ((layers | filterLayers:'WFS':'WMS').length > 0) {
                         @for (layer of layers | filterLayers:'WFS':'WMS'; track trackByFn($index, layer); let i =
                         $index) {
                         <div class="relative" [attr.data-index]="i">
@@ -75,13 +76,22 @@
                             </div>
                         </div>
                         }
+                        } @else {
+                            <div class="flex flex-col justify-center items-center pb-3">
+                                <p class="text-xs justify-center items-center text-center py-2">Importer d'ici:</p>
+                                <button class="flex rounded-full bg-blue-100" mat-icon-button (click)="toggleImportPanel()"
+                                    [matTooltip]="_quickChatService.isImportPanelVisible ? 'Annuler' : 'Importer une couche à partir d\'un serveur'">
+                                    <mat-icon [svgIcon]="_quickChatService.isImportPanelVisible ? 'heroicons_outline:x-mark' : 'heroicons_outline:cloud-arrow-down'"></mat-icon>
+                                </button>
+                            </div>
+                        }
                     </div>
 
                     <!-- Couches importées -->
                     <div class="mt-4">
                         <h3
                             class="text-xs mb-2 py-1 text-center font-semibold tracking-wider text-gray-500 border-b border-t border-gray-200">
-                            Couches importées
+                            Couches locales
                         </h3>
                         @if ((layers | filterLayers:'IMPORT').length > 0) {
                         @for (layer of layers | filterLayers:'IMPORT'; track trackByFn($index, layer); let i = $index) {
@@ -103,9 +113,9 @@
                         }
                         } @else {
                         <div class="flex flex-col justify-center items-center pb-3">
-                            <p class="text-xs justify-center items-center text-center py-2">Importer ici :</p>
+                            <p class="text-xs justify-center items-center text-center py-2">Importer d'ici:</p>
                             <button class="flex rounded-full bg-blue-100" mat-icon-button (click)="openFileInput()"
-                                [matTooltip]="'Importer une couche'">
+                                [matTooltip]="'Importer une couche locale'">
                                 <mat-icon [svgIcon]="'heroicons_outline:arrow-down-tray'"></mat-icon>
                             </button>
                         </div>

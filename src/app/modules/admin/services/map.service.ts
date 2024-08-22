@@ -15,6 +15,7 @@ import { Circle, Point } from 'ol/geom';
 import VectorSource from 'ol/source/Vector';
 import VectorLayer from 'ol/layer/Vector';
 import { Circle as CircleStyle, Fill, Stroke, Style } from 'ol/style';
+import { MatSnackBar } from '@angular/material/snack-bar';
 
 @Injectable({
   providedIn: 'root'
@@ -27,7 +28,7 @@ export class MapService {
   private geolocation: Geolocation;
   selectInteraction: Select;
 
-  constructor() { }
+  constructor(private snackBar: MatSnackBar) { }
 
   initializeMap(target: string): Map {
     const initialCenter = [1138871.0121687565, 4415980.133146803];
@@ -211,16 +212,35 @@ export class MapService {
 
     this.geolocation.setTracking(true);
 
-    // Create source and layer for displaying position
-    const positionSource = new VectorSource();
-    this.geolocationLayer = new VectorLayer({
-      source: positionSource,
-    });
-    map.addLayer(this.geolocationLayer);
 
     this.geolocation.on('change:position', () => {
       const coordinates = this.geolocation.getPosition();
       if (coordinates) {
+        const accuracy = this.geolocation.getAccuracy();
+        const view = map.getView();
+
+        if (accuracy && accuracy > 100) { // Adjust the threshold as needed
+          // Extent of the accuracy circle
+          const extent = new Circle(coordinates, accuracy).getExtent();
+          if (extent) {
+            view.fit(extent, {
+              duration: 4000,
+              maxZoom: 15 // Adjust this value as needed
+            });
+          }
+          this.isGeolocationActive = false;
+          this.geolocation.setTracking(false);
+          this.snackBar.open('Votre position exacte n\'a pas pu être déterminée. Veuillez vérifier votre connexion Internet ou d\'autres paramètres réseau.', 'Fermer', {
+            duration: 10000,
+          });
+          return;
+        }
+        const positionSource = new VectorSource();
+        this.geolocationLayer = new VectorLayer({
+          source: positionSource,
+        });
+        map.addLayer(this.geolocationLayer);
+
         positionSource.clear();
         const positionFeature = new Feature({
           geometry: new Point(coordinates),
@@ -229,7 +249,6 @@ export class MapService {
         positionSource.addFeature(positionFeature);
 
         // Accuracy circle
-        const accuracy = this.geolocation.getAccuracy();
         let accuracyFeature: Feature | null = null;
         if (accuracy) {
           accuracyFeature = new Feature({
@@ -269,34 +288,38 @@ export class MapService {
         positionFeature.setStyle(styles);
         accuracyFeature?.setStyle(styles[0]);
 
-        const view = map.getView();
-        const currentZoom = view.getZoom();
+        const extent = positionFeature.getGeometry()?.getExtent();
+        if (extent) {
+          // First, zoom out with a larger extent
+          const largerExtent = [
+            extent[0] - 6000, // Adjust these values to control the larger extent
+            extent[1] - 6000,
+            extent[2] + 6000,
+            extent[3] + 6000
+          ];
 
-        // Zoom out
-        view.animate({
-          zoom: currentZoom - 4, // Adjust this value to control how far it zooms out
-          duration: 2000
-        }, () => {
-          // Callback after zoom out is complete
-          // Move to new center
-          view.animate({
-            center: coordinates,
-            duration: 2000
-          }, () => {
-            // Callback after centering is complete
-            // Zoom in
-            view.animate({
-              zoom: 15,
-              duration: 2000
-            });
+          // Fit the larger extent with a zoom-out effect
+          view.fit(largerExtent, {
+            duration: 4000, // Duration for the first zoom out
           });
-        });
+
+          // After zooming out, animate to the exact extent and zoom in
+          setTimeout(() => {
+            view.fit(extent, {
+              duration: 4000,
+              maxZoom: 15,
+            });
+          }, 4000); // This timeout should match the duration of the first fit
+        }
       }
       this.geolocation.setTracking(false);
     });
 
     this.geolocation.on('error', (error) => {
       console.error('Geolocation error:', error);
+      this.snackBar.open('Erreur de géolocalisation : ' + error.message, 'Fermer', {
+        duration: 5000,
+      });
     });
   }
 
@@ -304,11 +327,11 @@ export class MapService {
     this.selectInteraction = new Select({
       condition: pointerMove
     });
-  
+
     // Create the card element dynamically
     const cardElement = document.createElement('mat-card');
     cardElement.className = 'feature-properties-card';
-  
+
     const cardContent = `
       <mat-card-header class="feature-properties-header">
         <mat-card-title id="feature-layer-title"></mat-card-title>
@@ -321,12 +344,12 @@ export class MapService {
     `;
     cardElement.innerHTML = cardContent;
     document.body.appendChild(cardElement); // Add the card to the body
-  
+
     // Function to update card content and title
     const updateCardContent = (properties: { [key: string]: any }, layerName: string) => {
       const tableElement = document.getElementById('feature-properties-table');
       const titleElement = document.getElementById('feature-layer-title');
-      
+
       let contentHtml = '';
       for (const [key, value] of Object.entries(properties)) {
         if (key !== 'geometry' && key !== '_layerName_$' && key !== '_type_$') {
@@ -336,9 +359,9 @@ export class MapService {
       tableElement.innerHTML = contentHtml;
       titleElement.textContent = layerName;
     };
-  
+
     let isHovering = false; // Flag to track hovering state
-  
+
     this.selectInteraction.on('select', (e) => {
       const feature = e.selected[0];
       if (feature && feature.get('_type_$') === 'Feature') {
@@ -351,9 +374,9 @@ export class MapService {
         cardElement.style.display = 'none';
       }
     });
-  
+
     this.getMap().addInteraction(this.selectInteraction);
-  
+
     // Update card position based on mouse pointer
     this.getMap().on('pointermove', (event) => {
       const feature = this.getMap().forEachFeatureAtPixel(event.pixel, (feature) => feature);
@@ -366,7 +389,7 @@ export class MapService {
         cardElement.style.display = 'none';
       }
     });
-  }  
+  }
 
 
 }

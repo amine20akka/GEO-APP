@@ -26,9 +26,13 @@ import { Subject, takeUntil } from 'rxjs';
 import { ImportService } from 'app/layout/common/import/import.service';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { CircleComponent } from 'app/layout/common/circle/circle.component';
-import { MatMenuModule, MatMenuTrigger } from '@angular/material/menu';
+import { MatMenuModule } from '@angular/material/menu';
 import { MapService } from 'app/modules/admin/services/map.service';
 import { LayersFilterComponent } from 'app/layout/common/layers-filter/layers-filter.component';
+import { ServerImportComponent } from 'app/layout/common/server-import/server-import.component';
+import { QuickChatService } from 'app/layout/common/quick-chat/quick-chat.service';
+import { ViewHistoryService } from 'app/layout/common/view-history/view-history.service';
+import { AsyncPipe } from '@angular/common';
 
 @Component({
     selector: 'classy-layout',
@@ -55,6 +59,8 @@ import { LayersFilterComponent } from 'app/layout/common/layers-filter/layers-fi
         SurfaceComponent,
         CircleComponent,
         LayersFilterComponent,
+        ServerImportComponent,
+        AsyncPipe,
     ],
 })
 export class ClassyLayoutComponent implements OnInit, OnDestroy {
@@ -79,6 +85,8 @@ export class ClassyLayoutComponent implements OnInit, OnDestroy {
         private _fuseNavigationService: FuseNavigationService,
         private _importService: ImportService,
         public _mapService: MapService,
+        public _quickChatService: QuickChatService,
+        public _viewHistoryService: ViewHistoryService,
     ) { }
 
     // -----------------------------------------------------------------------------------------------------
@@ -157,7 +165,19 @@ export class ClassyLayoutComponent implements OnInit, OnDestroy {
 
     toggleFilterPanel(): void {
         this.isFilterPanelVisible = !this.isFilterPanelVisible;
-      }
+    }
+
+    toggleImportPanel(): void {
+        this._quickChatService.isImportPanelVisible = !this._quickChatService.isImportPanelVisible;
+    }
+
+    goToPreviousView() {
+        this._viewHistoryService.goToPreviousView();
+    }
+
+    goToNextView() {
+        this._viewHistoryService.goToNextView();
+    }
 
     /**
      * Toggle navigation

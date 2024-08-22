@@ -1,0 +1,87 @@
+.import-panel {
+    position: absolute;
+    top: 70px;
+    right: 10px;
+    z-index: 1000;
+    background-color: #fff;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    border-radius: 8px;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    max-width: 320px;
+    width: 100%;
+
+    .dialog-title {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 16px;
+
+        mat-icon {
+            margin-right: 12px;
+            font-size: large;
+            color: #10263b;
+        }
+
+        h1 {
+            font-size: medium;
+            margin: 0;
+            color: #333;
+        }
+    }
+
+    .form-container {
+        display: flex;
+        flex-direction: column;
+        margin-bottom: 20px;
+
+        .form-fields {
+            width: 100%;
+
+            mat-label {
+                font-size: smaller;
+            }
+
+            input {
+                font-size: smaller;
+            }
+        }
+        
+        button {
+            font-size: smaller;
+            width: auto;
+            height: auto;
+            align-self: flex-end;
+        }
+    }
+
+    .layers-list {
+        display: flex;
+        flex-direction: column;
+        margin-top: 16px;
+
+        mat-label {
+            margin-bottom: 8px;
+            font-size: smaller;
+            color: #555;
+        }
+
+        mat-selection-list {
+            max-height: 200px;
+            overflow-y: auto;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 8px;
+            background-color: #fafafa;
+        }
+
+        button {
+            font-size: smaller;
+            width: auto;
+            height: auto;
+            align-self: flex-end;
+            margin-top: 16px;
+        }
+    }
+}

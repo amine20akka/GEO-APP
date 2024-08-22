@@ -51,8 +51,9 @@
             </div>
         </div>
         <div mat-dialog-actions>
-            <button mat-button type="button" (click)="resetForm()">Réinitailser</button>
+            <button mat-button type="button" (click)="reset()" [disabled]="!selectedLayer">Réinitailser le filtre</button>
             <button mat-raised-button color="primary" type="submit" [disabled]="!filterForm.valid">Appliquer</button>
         </div>
+        <button mat-button class="reset-all" type="button" (click)="resetAll()">Réinitailser tous les filtres</button>
     </form>
 </div>

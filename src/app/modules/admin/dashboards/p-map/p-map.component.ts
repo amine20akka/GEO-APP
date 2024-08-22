@@ -5,6 +5,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { Subscription } from 'rxjs';
 import { MatCardModule } from '@angular/material/card';
+import { ViewHistoryService } from 'app/layout/common/view-history/view-history.service';
 
 @Component({
   selector: 'app-pmap',
@@ -21,7 +22,11 @@ import { MatCardModule } from '@angular/material/card';
 export class PMapComponent implements OnInit, OnDestroy {
   private layersSubscription: Subscription;
 
-  constructor(private mapService: MapService, private layersService: LayersService) { }
+  constructor(
+    private mapService: MapService, 
+    private layersService: LayersService,
+    private viewHistoryService: ViewHistoryService,
+  ) { }
 
   ngOnInit() {
     this.initializeMap();
@@ -30,6 +35,8 @@ export class PMapComponent implements OnInit, OnDestroy {
 
   ngAfterViewInit(): void {
     this.mapService.addHoverInteraction();
+    this.viewHistoryService.saveCurrentView();
+    this.viewHistoryService.trackViewChanges();
   }
 
   ngOnDestroy(): void {
@@ -50,8 +57,15 @@ export class PMapComponent implements OnInit, OnDestroy {
         this.mapService.addLayersToMap(layers);
       });
 
-    this.layersService.fetchLayersFromWorkspace('test_data').catch(error => {
-      console.error('Error fetching layers:', error);
-    });
+    // this.layersService.fetchLayersFromWorkspace('test_data').subscribe(fetchedLayers => {
+    //   console.log(fetchedLayers);
+    //   if (fetchedLayers.length > 0) {
+    //     this.layersService.updateLayers(fetchedLayers);
+    //     fetchedLayers.forEach(customLayer => {
+    //       this.layersService.addFeatures(customLayer);
+    //     })
+    //   }
+    // });
+
   }
 }

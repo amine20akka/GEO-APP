@@ -33,6 +33,8 @@ import { AttributeTableService } from './attribute-table/attribute-table.service
 import Feature from 'ol/Feature';
 import { MatDialogModule } from '@angular/material/dialog';
 import { MapService } from 'app/modules/admin/services/map.service';
+import { ServerImportComponent } from '../server-import/server-import.component';
+import { QuickChatService } from './quick-chat.service';
 
 @Component({
     selector: 'quick-chat',
@@ -61,6 +63,7 @@ import { MapService } from 'app/modules/admin/services/map.service';
         MatTooltipModule,
         MatDialogModule,
         FilterLayersPipe,
+        ServerImportComponent,
     ],
 })
 export class QuickChatComponent implements OnInit, OnDestroy {
@@ -88,6 +91,7 @@ export class QuickChatComponent implements OnInit, OnDestroy {
         private _importService: ImportService,
         private _mapService: MapService,
         private _attributeTableService: AttributeTableService,
+        private _quickChatService: QuickChatService,
     ) { }
 
     @HostBinding('class') get classList(): any {
@@ -153,6 +157,10 @@ export class QuickChatComponent implements OnInit, OnDestroy {
     
     onLayerVisibilityChange(layerId: string): void {
         this._layersService.onLayerVisibilityChange(layerId);
+    }
+
+    toggleImportPanel(): void {
+        this._quickChatService.isImportPanelVisible = !this._quickChatService.isImportPanelVisible;
     }
 
     openFileInput() : void {

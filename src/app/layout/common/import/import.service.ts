@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { MatDialog } from '@angular/material/dialog';
 import { MatSnackBar } from '@angular/material/snack-bar';
-import { ImportDialogComponent } from './import-dialog/import-dialog.component';
+import { ImportDialogComponent } from '../local-import/import-dialog/import-dialog.component';
 import Feature from 'ol/Feature';
 import VectorSource from 'ol/source/Vector';
 import VectorLayer from 'ol/layer/Vector';
@@ -47,6 +47,7 @@ export class ImportService {
 
     if (!this.layersService.exists(customLayer.features) && !this.layersService.nameExists(customLayer.name)) {
       this.layersService.addLayer(customLayer);
+      this.layersService.addFeatures(customLayer);
       customLayer.layer.setVisible(true);
       this.mapService.getMap().getView().fit(vectorSource.getExtent());
       this.snackBar.open(`La couche "${importedData.name}" a été ajouté avec succès`, 'Fermer', {

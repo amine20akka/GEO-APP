@@ -25,11 +25,11 @@
     justify-content: center;
     margin-bottom: 16px;
     margin-top: 8px;
-    font-size: small;
+    font-size: medium;
   }
   
-  .filter-panel .dialog-title mat-icon {
-    margin-right: 8px;
+  .filter-panel mat-icon {
+    margin-right: 12px;
     font-size: large;
   }
   
@@ -46,8 +46,20 @@
     font-size: smaller;
   }
   
-  .filter-panel button {
+  .filter-panel mat-dialog-actions {
+    display: flex;
+    flex-direction: row;
     align-self: flex-end;
+  }
+
+  .filter-panel .reset-all {
+    display: flex;
+    flex-direction: row;
+    align-self: flex-end;
+    margin: 12px;
+  }
+
+  .filter-panel button {
     font-size: smaller;
   }
   

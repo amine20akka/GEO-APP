@@ -12,6 +12,7 @@ import { MatInputModule } from '@angular/material/input';
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 import VectorSource from 'ol/source/Vector';
+import { MapService } from 'app/modules/admin/services/map.service';
 @Component({
   selector: 'app-layers-filter',
   standalone: true,
@@ -38,8 +39,9 @@ export class LayersFilterComponent {
   private destroy$ = new Subject<void>();
 
   constructor(
-    private fb: FormBuilder, 
-    private layersService: LayersService, 
+    private fb: FormBuilder,
+    private layersService: LayersService,
+    private mapService: MapService,
   ) {
     // Initialize the form with validators
     this.filterForm = this.fb.group({
@@ -67,6 +69,11 @@ export class LayersFilterComponent {
 
   onLayerChange(selectedLayer: CustomLayer): void {
     this.selectedLayer = selectedLayer;
+    this.selectedLayer.layer.setVisible(true);
+    const vectorSource = selectedLayer.layer.getSource() as VectorSource;
+    this.mapService.getMap().getView().fit(vectorSource.getExtent(), {
+      maxZoom: 15
+    });
     this.columns = this.getLayerProperties(this.selectedLayer.features);
     this.filterForm.get('selectedColumn').reset();
     this.columnType = '';
@@ -136,17 +143,19 @@ export class LayersFilterComponent {
       const filterText = this.filterForm.get('filterText').value;
       const filterMinNumber = this.filterForm.get('filterMinNumber').value;
       const filterMaxNumber = this.filterForm.get('filterMaxNumber').value;
-      
+
       // Implement the logic to filter the layers based on filter values
       this.selectedLayer.features = this.selectedLayer.features.filter((feature) => {
         const properties = feature.getProperties();
         const selectedColumnValue = properties[selectedColumn];
-        if (this.columnType === 'string') {
-          return selectedColumnValue.toString().toLowerCase().includes(filterText.toString().toLowerCase());
-        } else if (this.columnType === 'number') {
-          return selectedColumnValue >= filterMinNumber && selectedColumnValue <= filterMaxNumber;
+        if (selectedColumnValue) {
+          if (this.columnType === 'string') {
+            return selectedColumnValue.toString().toLowerCase().includes(filterText.toString().toLowerCase());
+          } else if (this.columnType === 'number') {
+            return selectedColumnValue >= filterMinNumber && selectedColumnValue <= filterMaxNumber;
+          }
         }
-        return true;
+        return false;
       });
 
       // Update the source of the selected layer
@@ -158,12 +167,28 @@ export class LayersFilterComponent {
     }
   }
 
-  resetForm(): void {
-    this.filterForm.reset();
-    this.columns = [];
-    this.columnType = '';
-    // Reset to original layers
-    
+  reset(): void {
+    const originalFeatures = this.layersService.getFeaturesById(this.selectedLayer.id);
+    if (originalFeatures) {
+      const vectorSource = new VectorSource({
+        features: originalFeatures
+      });
+      this.selectedLayer.features = originalFeatures;
+      this.selectedLayer.layer.setSource(vectorSource);
+    }
+  }
+
+  resetAll(): void {
+    this.allLayers.forEach(customLayer => {
+      const originalFeatures = this.layersService.getFeaturesById(customLayer.id);
+      if (originalFeatures) {
+        const vectorSource = new VectorSource({
+          features: originalFeatures
+        });
+        customLayer.features = originalFeatures;
+        customLayer.layer.setSource(vectorSource);
+      }
+    })
   }
 
   getLayerProperties(features: Feature[]): string[] {

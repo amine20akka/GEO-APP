@@ -15,6 +15,7 @@ import {
 export class QuickChatService {
     private _chat: BehaviorSubject<Chat> = new BehaviorSubject(null);
     private _chats: BehaviorSubject<Chat[]> = new BehaviorSubject<Chat[]>(null);
+    isImportPanelVisible = false;
 
     /**
      * Constructor
