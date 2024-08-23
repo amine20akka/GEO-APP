@@ -16,7 +16,7 @@
             </button>
         </div>
 
-        @if (!fetchedLayersExist) {
+        @if (!isLoading && !fetchedLayersExist) {
         <div class="flex h-full w-full flex-auto flex-col items-center justify-center mt-4 p-4 bg-gray-200">
             <mat-icon class="text-l text-hint">cloud_off</mat-icon>
             <h2 class="mt-2 text-center text-s font-small text-secondary">Pas de couches trouvées dans cet espace de
