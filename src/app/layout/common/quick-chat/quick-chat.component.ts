@@ -37,6 +37,12 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { CustomLayer } from './quick-chat.types';
 import { FilterLayersPipe } from 'app/modules/admin/filter-layers-pipe/filter-layers.pipe';
 import { ImportService } from '../import/import.service';
+import { AttributeTableService } from './attribute-table/attribute-table.service';
+import Feature from 'ol/Feature';
+import { MatDialogModule } from '@angular/material/dialog';
+import { MapService } from 'app/modules/admin/services/map.service';
+import { ServerImportComponent } from '../server-import/server-import.component';
+import { QuickChatService } from './quick-chat.service';
 import { StyleService } from 'app/modules/admin/services/style.service';
 import { MapService } from 'app/modules/admin/services/map.service';
 import { Circle, Fill, Icon, Stroke, Style } from 'ol/style';
@@ -81,12 +87,14 @@ import CircleStyle from 'ol/style/Circle';
         MatTabsModule,
         MatSliderModule,
         MatTooltipModule,
+        MatDialogModule,
         FilterLayersPipe,
+        ServerImportComponent,
         MatExpansionModule,
         MatSelectModule,
         CommonModule,
         MiniMapComponent,
-        RouterModule
+        RouterModule,
     ],
 })
 export class QuickChatComponent implements OnInit, OnDestroy, AfterViewInit {
@@ -155,21 +163,17 @@ export class QuickChatComponent implements OnInit, OnDestroy, AfterViewInit {
         private _scrollStrategyOptions: ScrollStrategyOptions,
         private _layersService: LayersService,
         private _importService: ImportService,
+        private _attributeTableService: AttributeTableService,
+        private _quickChatService: QuickChatService,
         private _styleService: StyleService,
         private _mapService: MapService,
         private _changeDetectorRef: ChangeDetectorRef,
         private _ngZone: NgZone,
         private _router: Router,
-        private sanitizer: DomSanitizer
-
-        
-        
-
+        private sanitizer: DomSanitizer,
     ) {
         this._scrollStrategy = this._scrollStrategyOptions.block();
         console.log('QuickChatComponent constructor called');
-
-
     }
 
     @HostBinding('class') get classList(): any {
@@ -895,6 +899,11 @@ export class QuickChatComponent implements OnInit, OnDestroy, AfterViewInit {
         }
     }
 
+
+    toggleImportPanel(): void {
+        this._quickChatService.isImportPanelVisible = !this._quickChatService.isImportPanelVisible;
+    }
+  
     private capitalize(str: string): string {
         return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
     }
@@ -903,6 +912,11 @@ export class QuickChatComponent implements OnInit, OnDestroy, AfterViewInit {
         this._importService.openFileInput();
     }
 
+    openAttributeTable(layerId: string) {
+        const layer = this._layersService.getLayerById(layerId);
+        this._attributeTableService.openAttributeTable(layer);
+    }
+    
     open(): void {
         if (!this.opened) {
             this._toggleOpened(true);

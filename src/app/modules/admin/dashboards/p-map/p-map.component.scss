@@ -25,24 +25,6 @@
 .ol-zoom, .ol-full-screen, .ol-rotate {
   position: static;
   margin-bottom: 5px;
-}
-
-.ol-zoom {
-  display: flex;
-  flex-direction: column;
-}
-
-.ol-zoom .ol-zoom-in,
-.ol-zoom .ol-zoom-out {
-  display: block;
-  margin-bottom: 5px;
-}
-
-.ol-full-screen {
-  display: block;
-}
-
-.ol-rotate {
   display: block;
 }
 
@@ -67,4 +49,95 @@
 
 .ol-attribution {
   display: none;
+}
+
+.ol-scale-line {
+  background: transparent; 
+}
+
+.ol-scale-line-inner {
+  display: flex;
+  color: #000;
+  font-weight: bold;
+}
+
+.ol-scale-text {
+  margin-bottom: 3px;
+}
+
+.ol-rotate-control {
+  position: static;
+  margin-bottom: 5px;
+}
+
+.ol-rotate-custom {
+  display: block;
+  background: transparent;
+  color: black;
+  font-size: 18px;
+  font-weight: bold;
+  margin: 2px 0;
+  padding: 0;
+  width: 36px;
+  height: 36px;
+  line-height: 36px;
+  border: none;
+  border-radius: 4px;
+}
+
+.ol-rotate-custom:hover {
+  background: rgba(0, 0, 0, 0.1);
+}
+
+.feature-properties-card {
+  position: absolute;
+  z-index: 1000;
+  width: auto;
+  padding: 4px;
+  max-width: 300px;
+  overflow: auto;
+  font-size: 0.875em;
+  background-color: #3a3a3a;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+  border-radius: 4px;
+  display: none;
+  transform: translate(0, 0);
+}
+
+.feature-properties-header {
+  display: flex;
+  align-items: center;
+  justify-content: start;
+  text-align: center;
+  padding: 6px;
+}
+
+#feature-layer-title {
+  font-weight: bold;
+  color: #ffffff;
+}
+
+.feature-properties-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.property-key {
+  color: #a8a8a8;
+  padding: 8px;
+  width: auto;
+}
+
+.property-value {
+  color: #f1f1f1;
+  width: auto;
+  padding: 8px;
+}
+
+.divider {
+  display: flex;
+  margin: 2px 0;
+  border: 0.1px solid #dfdfdf;
+  size: 1px;
+  opacity: 0.6;
 }

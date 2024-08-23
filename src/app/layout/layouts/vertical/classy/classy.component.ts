@@ -22,6 +22,13 @@ import { UserComponent } from 'app/layout/common/user/user.component';
 import { firstValueFrom, Subject, takeUntil } from 'rxjs';
 import { ImportService } from 'app/layout/common/import/import.service';
 import { MatTooltipModule } from '@angular/material/tooltip';
+import { CircleComponent } from 'app/layout/common/circle/circle.component';
+import { MatMenuModule } from '@angular/material/menu';
+import { LayersFilterComponent } from 'app/layout/common/layers-filter/layers-filter.component';
+import { ServerImportComponent } from 'app/layout/common/server-import/server-import.component';
+import { QuickChatService } from 'app/layout/common/quick-chat/quick-chat.service';
+import { ViewHistoryService } from 'app/layout/common/view-history/view-history.service';
+import { AsyncPipe } from '@angular/common';
 import { CustomLayer } from 'app/layout/common/quick-chat/quick-chat.types';
 import { MapService } from 'app/modules/admin/services/map.service';
 import { LayersService } from 'app/modules/admin/services/layers.service';
@@ -49,6 +56,7 @@ import { CommonModule } from '@angular/common';
         MatIconModule,
         MatDialogModule,
         MatTooltipModule,
+        MatMenuModule,
         LanguagesComponent,
         FuseFullscreenComponent,
         SearchComponent,
@@ -57,7 +65,11 @@ import { CommonModule } from '@angular/common';
         RouterOutlet,
         QuickChatComponent,
         DistanceComponent,
-        SurfaceComponent
+        SurfaceComponent,
+        CircleComponent,
+        LayersFilterComponent,
+        ServerImportComponent,
+        AsyncPipe,
     ],
 })
 export class ClassyLayoutComponent implements OnInit, OnDestroy {
@@ -68,6 +80,8 @@ export class ClassyLayoutComponent implements OnInit, OnDestroy {
     navigation: Navigation;
     user: User;
     private _unsubscribeAll: Subject<any> = new Subject<any>();
+    isMeasurementPanelVisible = false;
+    isFilterPanelVisible = false;
     private dialogRef: MatDialogRef<any>;
 
     constructor(
@@ -78,8 +92,10 @@ export class ClassyLayoutComponent implements OnInit, OnDestroy {
         private _fuseMediaWatcherService: FuseMediaWatcherService,
         private _fuseNavigationService: FuseNavigationService,
         private _importService: ImportService,
-        private mapService: MapService,
-        private layersService: LayersService,
+        public _mapService: MapService,
+        public _quickChatService: QuickChatService,
+        public _viewHistoryService: ViewHistoryService,
+        private _layersService: LayersService,
         private dialog: MatDialog
     ) {}
 
@@ -112,14 +128,48 @@ export class ClassyLayoutComponent implements OnInit, OnDestroy {
         this._unsubscribeAll.complete();
     }
 
+    // -----------------------------------------------------------------------------------------------------
+    // @ Public methods
+    // -----------------------------------------------------------------------------------------------------
+
     openFileInput(): void {
         this._importService.openFileInput();
+    }
+
+    geolocate(): void {
+        this._mapService.geolocate();
+        this._mapService.isGeolocationActive = !this._mapService.isGeolocationActive;
     }
 
     openShortcuts(): void {
         this.shortcutsComponent?.openPanel();
     }
 
+    toggleMeasurementPanel(): void {
+        this.isMeasurementPanelVisible = !this.isMeasurementPanelVisible;
+    }
+
+    toggleFilterPanel(): void {
+        this.isFilterPanelVisible = !this.isFilterPanelVisible;
+    }
+
+    toggleImportPanel(): void {
+        this._quickChatService.isImportPanelVisible = !this._quickChatService.isImportPanelVisible;
+    }
+
+    goToPreviousView() {
+        this._viewHistoryService.goToPreviousView();
+    }
+
+    goToNextView() {
+        this._viewHistoryService.goToNextView();
+    }
+
+    /**
+     * Toggle navigation
+     *
+     * @param name
+     */
     toggleNavigation(name: string): void {
         const navigation = this._fuseNavigationService.getComponent<FuseVerticalNavigationComponent>(name);
         navigation?.toggle();
@@ -154,10 +204,10 @@ export class ClassyLayoutComponent implements OnInit, OnDestroy {
                 console.log('Printing extended view');
             }
 
-            const pmap = this.mapService.getMap();
+            const pmap = this._mapService.getMap();
             console.log('Map obtained:', pmap);
 
-            const layers: CustomLayer[] = await firstValueFrom(this.layersService.layers$);
+            const layers: CustomLayer[] = await firstValueFrom(this._layersService.layers$);
             console.log('Layers obtained:', layers);
 
             if (!pmap || !layers) {
@@ -272,7 +322,7 @@ export class ClassyLayoutComponent implements OnInit, OnDestroy {
                             <div class="layers-title">Couches actives</div>
                             ${layers.map(layer => `
                                 <div class="layer-item">
-                                    ${layer.name} (${this.layersService.getOpenLayersLegend(layer)})
+                                    ${layer.name} (${this._layersService.getOpenLayersLegend(layer)})
                                 </div>
                             `).join('')}
                         </div>

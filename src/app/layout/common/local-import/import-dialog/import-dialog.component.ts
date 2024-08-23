@@ -8,6 +8,8 @@ import GPX from 'ol/format/GPX';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
+import { MatButtonModule } from '@angular/material/button';
+import { ImportService } from '../../import/import.service';
 
 @Component({
   selector: 'app-import-dialog',
@@ -19,6 +21,7 @@ import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angula
     MatDialogModule,
     MatFormFieldModule,
     MatInputModule,
+    MatButtonModule,
   ],
   templateUrl: './import-dialog.component.html',
   styleUrl: './import-dialog.component.scss'
@@ -30,7 +33,11 @@ export class ImportDialogComponent implements OnInit {
   featureProperties: any[] = [];
   layerName: string = '';
 
-  constructor(public dialogRef: MatDialogRef<ImportDialogComponent>, private fb: FormBuilder) {}
+  constructor(
+    public dialogRef: MatDialogRef<ImportDialogComponent>, 
+    private fb: FormBuilder, 
+    private importService: ImportService,
+  ) {}
 
   ngOnInit() : void {
     this.importForm = this.fb.group({
@@ -140,16 +147,26 @@ export class ImportDialogComponent implements OnInit {
   }
 
   importFile(): void {
+    this.preparedFeatures.forEach(feature => {
+      if (this.layerName.trim() !== '') {
+        feature.set('_layerName_$', this.layerName);
+      }
+      feature.set('_type_$', 'Feature')
+    });
     if (this.preparedFeatures.length > 0 && this.layerName.trim() !== '') {
-      this.dialogRef.close({
-        name: this.layerName,
-        features: this.preparedFeatures,
-      });
+      const isAdded = this.importService.addFeaturesToMap({name: this.layerName, features: this.preparedFeatures});
+      if (isAdded) {
+        this.dialogRef.close({});
+      }
     } else {
       // Afficher un message d'erreur si le nom de la couche est vide
       console.error('Le nom de la couche ne peut pas être vide');
     }
     this.selectedFile = null;
+    this.preparedFeatures = [];
+    this.featureProperties = [];
+    this.layerName = '';
+    this.importForm.get('layerName').setValue('');
   }
 
   onDragOver(event: DragEvent) {

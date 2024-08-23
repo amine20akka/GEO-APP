@@ -1,0 +1,65 @@
+.filter-panel {
+    position: absolute;
+    top: 70px;
+    right: 10px;
+    z-index: 1000;
+    background-color: white;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+    border-radius: 4px;
+    padding: 10px;
+    display: flex;
+    flex-direction: column;
+    max-width: 300px;
+    width: auto;
+  }
+
+  .form-container {
+    width: auto;
+    display: flex;
+    flex-direction: column;
+  }
+  
+  .filter-panel .dialog-title {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 16px;
+    margin-top: 8px;
+    font-size: medium;
+  }
+  
+  .filter-panel mat-icon {
+    margin-right: 12px;
+    font-size: large;
+  }
+  
+  .form-fields {
+    margin-bottom: 12px;
+    width: 100%;
+  }
+
+  .form-fields mat-label {
+    font-size: smaller;
+  }
+
+  .form-fields mat-select,  .form-fields input{
+    font-size: smaller;
+  }
+  
+  .filter-panel mat-dialog-actions {
+    display: flex;
+    flex-direction: row;
+    align-self: flex-end;
+  }
+
+  .filter-panel .reset-all {
+    display: flex;
+    flex-direction: row;
+    align-self: flex-end;
+    margin: 12px;
+  }
+
+  .filter-panel button {
+    font-size: smaller;
+  }
+  

@@ -18,24 +18,12 @@ export class StyleService {
     this.loadStylesFromLocalStorage();
   }
 
-  getLegendStyle(style: any): any {
-    if (style instanceof Style) {
-      const fill = style.getFill();
-      const image = style.getImage();
-
-      if (fill) {
-        return {
-          'background-color': fill.getColor(),
-        };
-      } else if (image && image instanceof CircleStyle) {
-        const circleFill = image.getFill();
-        return {
-          'background-color': circleFill.getColor(),
-          'border-radius': '50%'
-        };
-      }
-    }
-    return {};
+  addStyle(layerName: string, style: Style): void {
+    const currentStyles = this.stylesSubject.value;
+    this.stylesSubject.next({
+      ...currentStyles,
+      [layerName]: style
+    });
   }
 
   // Charger les styles du local storage avec un préfixe spécifique
@@ -57,11 +45,7 @@ export class StyleService {
   // Enregistrer un style dans le local storage avec un préfixe spécifique
   saveStyle(layerName: string, style: Style): void {
     this.saveStyleToLocalStorage(layerName, style);
-
-    const currentStyles = this.stylesSubject.getValue();
-    currentStyles[layerName] = style;
-
-    this.stylesSubject.next(currentStyles);
+    this.addStyle(layerName,style);
   }
 
   // Supprimer un style du local storage et mettre à jour l'observable
@@ -254,7 +238,6 @@ export class StyleService {
       zIndex: style.getZIndex() !== undefined && style.getZIndex() !== null ? style.getZIndex() : 0
     };
   }
-
 
   // Convert JSON to OpenLayers Style
   private jsonToStyle(json: any): Style {

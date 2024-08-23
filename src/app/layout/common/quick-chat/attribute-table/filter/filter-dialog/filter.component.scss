@@ -1,0 +1,29 @@
+.form-container {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.form-fields {
+    width: auto;
+}
+
+.dialog-title {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+
+    h1 {
+        margin-bottom: 12px;
+    }
+
+    mat-icon {
+        font-size: large;
+    }
+}
+
+mat-dialog-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+}

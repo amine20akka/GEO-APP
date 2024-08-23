@@ -1,0 +1,65 @@
+<!-- Import panel -->
+<div class="import-panel">
+    <form [formGroup]="importForm">
+        <div class="dialog-title">
+            <mat-icon>cloud_download</mat-icon>
+            <h1><strong>Importer d'un serveur</strong></h1>
+        </div>
+        <div class="form-container">
+            <mat-form-field appearance="fill" class="form-fields">
+                <mat-label>Nom de l'espace de travail</mat-label>
+                <input matInput formControlName="workspaceName" (keyup.enter)="loadLayers()">
+            </mat-form-field>
+            <button mat-raised-button color="primary" [disabled]="!importForm.get('workspaceName').value"
+                (click)="loadLayers()">
+                Charger les couches
+            </button>
+        </div>
+
+        @if (!isLoading && !fetchedLayersExist) {
+        <div class="flex h-full w-full flex-auto flex-col items-center justify-center mt-4 p-4 bg-gray-200">
+            <mat-icon class="text-l text-hint">cloud_off</mat-icon>
+            <h2 class="mt-2 text-center text-s font-small text-secondary">Pas de couches trouvées dans cet espace de
+                travail</h2>
+            <p class="mt-2 text-center text-s text-hint">Veuillez vérifier le nom de votre espace de travail
+            </p>
+        </div>
+        }
+
+        @if (isLoading) {
+        <div class="flex flex-col justify-center items-center p-4">
+            <mat-spinner class="h-8 w-8 mt-4 mb-4"></mat-spinner>
+            <p class="text-xs text-hint mt-2">Chargement des couches...</p>
+        </div>
+        }
+
+        @if (!isLoading && (availableLayers$ | async) && fetchedLayersExist) {
+        <div class="layers-list">
+            <mat-label>Couches Disponibles</mat-label>
+            <mat-selection-list formControlName="selectedLayers">
+                @for (layerObj of availableLayers$ | async; track trackByFn($index, layerObj);) {
+                <mat-list-option [ngClass]="{
+                    'bg-stone-200': layerObj.exists,
+                    'bg-red-100' : layerObj.sameName,
+                    'h-auto w-auto': true,
+                  }" [value]="layerObj.layer" [disabled]="layerObj.exists || layerObj.sameName">
+                    {{ layerObj.layer.name }}
+                    @if (layerObj.exists) {
+                    <span class="text-xs text-gray-700 text-hint text-secondary mt-0 ml-1">Déjà importé</span>
+                    }
+                    @if (!layerObj.exists && layerObj.sameName) {
+                    <br>
+                    <span class="text-xs text-gray-700 text-hint text-secondary mt-0 ml-1">Même nom qu'une couche
+                        existante. Veuillez le changer !</span>
+                    }
+                </mat-list-option>
+                }
+            </mat-selection-list>
+            <button mat-raised-button color="accent" type="submit" (click)="importLayers()"
+                [disabled]="!layersAreSelected">
+                Importer les couches sélectionnées
+            </button>
+        </div>
+        }
+    </form>
+</div>

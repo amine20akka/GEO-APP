@@ -1,5 +1,5 @@
-<h2 mat-dialog-title class="font-bold font-large">Importer une couche</h2>
 <form [formGroup]="importForm" (ngSubmit)="onSubmit()">
+<h2 mat-dialog-title class="font-bold font-large">Importer une couche</h2>
   <mat-dialog-content class="dialog-content">
     <p class="description">Sélectionnez un fichier à importer. Formats pris en charge : GeoJSON, KML, GML et GPX.</p>
     <div class="drag-drop-container" (dragover)="onDragOver($event)" (dragleave)="onDragLeave($event)" (drop)="onDrop($event)">
@@ -12,7 +12,7 @@
           </mat-form-field>
         } @else {
           <p>Glissez et déposez votre fichier ici, ou</p>
-          <button class="underline font-semibold" mat-stroked-button (click)="fileInput.click()">
+          <button class="underline font-semibold" mat-button (click)="fileInput.click()">
             <mat-icon style="margin-right: 10px;" class="icon-size-4" [svgIcon]="'heroicons_solid:paper-clip'"></mat-icon>
             Parcourir vos fichiers
           </button>
@@ -22,7 +22,7 @@
     </div>
   </mat-dialog-content>
   <mat-dialog-actions class="dialog-actions">
-    <button mat-raised-button (click)="closeDialog()">Annuler</button>
-    <button mat-button type="submit" [disabled]="importForm.invalid || !selectedFile" class="font-semibold">Ajouter à la carte</button>
+    <button mat-button (click)="closeDialog()">Annuler</button>
+    <button mat-raised-button color="primary" type="submit" [disabled]="importForm.invalid || !selectedFile" class="font-semibold">Ajouter à la carte</button>
   </mat-dialog-actions>
 </form>

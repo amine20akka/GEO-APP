@@ -1,5 +1,5 @@
 import { Component, OnDestroy, AfterViewInit, Input } from '@angular/core';
-import { Draw } from 'ol/interaction';
+import { Draw, Modify } from 'ol/interaction';
 import { Style, Stroke, Fill, Circle as CircleStyle } from 'ol/style';
 import { LineString } from 'ol/geom';
 import { MapService } from 'app/modules/admin/services/map.service';
@@ -24,7 +24,8 @@ export class DistanceComponent implements OnDestroy, AfterViewInit {
 
   private map: Map;
   private draw: Draw;
-  private vector: any;
+  private modify: Modify;
+  private vector: VectorLayer<VectorSource>;
   private source: VectorSource;
   private pointerMoveListener: any;
   private indicatorOverlay: Overlay;
@@ -101,30 +102,23 @@ export class DistanceComponent implements OnDestroy, AfterViewInit {
     if (container) {
       container.parentNode.removeChild(container);
     }
-
-    if (this.map) {
-      this.map.removeOverlay(this.distanceOverlay);
-      this.hideIndicator();
-      if (this.pointerMoveListener) {
-        this.map.un('pointermove', this.pointerMoveListener);
-      }
-    }
+    this.clearMeasurement();
   }
 
   private showIndicator(): void {
     const indicatorElement = document.createElement('div');
     indicatorElement.className = 'indicator-overlay';
-    indicatorElement.innerHTML = '<div class="indicator-message">Click to start measuring</div>';
-    
+    indicatorElement.innerHTML = '<div class="indicator-message">Cliquer pour commencer à mesurer</div>';
+
     this.indicatorOverlay = new Overlay({
       element: indicatorElement,
       positioning: 'bottom-center',
       offset: [0, -15],
       stopEvent: false,
     });
-  
+
     this.map.addOverlay(this.indicatorOverlay);
-  
+
     // Apply styles to the indicator
     indicatorElement.querySelector('.indicator-message').setAttribute('style', `
       background-color: rgba(0, 0, 0, 0.7);
@@ -136,18 +130,25 @@ export class DistanceComponent implements OnDestroy, AfterViewInit {
       white-space: nowrap;
     `);
   }
-  
+
   private hideIndicator(): void {
     if (this.indicatorOverlay) {
       this.map.removeOverlay(this.indicatorOverlay);
       this.indicatorOverlay = null;
     }
   }
-  
+
   private updateIndicatorPosition(coordinate: number[]): void {
     if (this.indicatorOverlay) {
       this.indicatorOverlay.setPosition(coordinate);
     }
+  }
+
+  private formatLength(length: number): string {
+    if (length > 1000) {
+      return `${(length / 1000).toFixed(2)} km`;
+    }
+    return `${length.toFixed(2)} m`;
   }
 
   startMeasure(): void {
@@ -155,7 +156,7 @@ export class DistanceComponent implements OnDestroy, AfterViewInit {
       console.log('Measurement is already in progress.');
       return;
     }
-    
+
     if (this.vector) {
       this.map.removeLayer(this.vector);
       this.distanceOverlay.setPosition(undefined);
@@ -220,7 +221,7 @@ export class DistanceComponent implements OnDestroy, AfterViewInit {
         // Update the overlay content and position dynamically
         const element = this.distanceOverlay.getElement();
         if (element) {
-          element.querySelector('#distanceText').innerHTML = `${length.toFixed(2)} m`;
+          element.querySelector('#distanceText').innerHTML = `Distance: ${this.formatLength(length)}`;
           this.distanceOverlay.setPosition(midCoord);
         }
       });
@@ -229,16 +230,40 @@ export class DistanceComponent implements OnDestroy, AfterViewInit {
     this.draw.on('drawend', (evt) => {
       const geom = evt.feature.getGeometry() as LineString;
       const length = geom.getLength();
-      const endCoord = geom.getLastCoordinate();
+      const midCoord = geom.getCoordinateAt(0.5);
 
       // Update the overlay content and position with the final measurement
       const element = this.distanceOverlay.getElement();
       if (element) {
-        element.querySelector('#distanceText').innerHTML = `${length.toFixed(2)} m`;
-        this.distanceOverlay.setPosition(endCoord);
+        element.querySelector('#distanceText').innerHTML = `Distance: ${this.formatLength(length)}`;
+        this.distanceOverlay.setPosition(midCoord);
       }
 
       this.map.removeInteraction(this.draw);
+
+      // Create the Modify interaction
+      this.modify = new Modify({ source: this.source });
+      this.map.addInteraction(this.modify);
+
+      // Update distance on geometry change
+      this.modify.on('modifystart', (evt) => {
+        const features = evt.features.getArray();
+        if (features.length > 0) {
+            const feature = features[0]; // Assuming you're only modifying one feature
+            const geom = feature.getGeometry() as LineString;
+            const length = geom.getLength();
+            const midCoord = geom.getCoordinateAt(0.5);
+    
+            // Update overlay content and position
+            const element = this.distanceOverlay.getElement();
+            if (element) {
+                element.querySelector('#distanceText').innerHTML = `${length.toFixed(2)} m`;
+                this.distanceOverlay.setPosition(midCoord);
+            }
+        }
+    });
+    
+
       this.isMeasuring = false;
     });
   }
@@ -254,5 +279,6 @@ export class DistanceComponent implements OnDestroy, AfterViewInit {
       this.isMeasuring = false;
     }
     this.map.removeInteraction(this.draw);
+    this.map.removeInteraction(this.modify);
   }
 }

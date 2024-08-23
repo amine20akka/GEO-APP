@@ -2,10 +2,10 @@ import { Injectable } from '@angular/core';
 import axios from 'axios';
 import { Layer, Tile as TileLayer, Vector as VectorLayer } from 'ol/layer';
 import GeoJSON from 'ol/format/GeoJSON';
+import { from, Observable, BehaviorSubject } from 'rxjs';
+import { map, mergeMap, toArray } from 'rxjs/operators';
+import Style from 'ol/style/Style';
 import { Vector as VectorSource, TileWMS, Source } from 'ol/source';
-import { BehaviorSubject } from 'rxjs';
-import { FlatStyleLike } from 'ol/style/flat';
-import Style, { StyleLike } from 'ol/style/Style';
 import { StyleService } from './style.service';
 import { CustomLayer } from 'app/layout/common/quick-chat/quick-chat.types';
 import { v4 as uuidv4 } from 'uuid';
@@ -18,14 +18,15 @@ import CircleStyle from 'ol/style/Circle';
 @Injectable({
   providedIn: 'root',
 })
+
 export class LayersService {
   private geoServerUrl = 'http://localhost:8080/geoserver';
   
   // Using BehaviorSubject to manage layers state
   private layersSubject = new BehaviorSubject<CustomLayer[]>([]);
+  private originalFeaturesSubject = new BehaviorSubject<Map<string, Feature[]>>(new Map());
   layers$ = this.layersSubject.asObservable();
-  
-  
+  originalFeaturesMap$ = this.originalFeaturesSubject.asObservable();
   private zIndexCounter = 0;
 
   constructor(private styleService: StyleService, private _mapService: MapService ,   private sanitizer: DomSanitizer
@@ -46,9 +47,71 @@ export class LayersService {
     return this.layersSubject.value.find(layer => layer.name === name);
   }
 
-  // Check if a layer already exists in the state
-  exists(customLayer: CustomLayer): boolean {
-    return this.layersSubject.value.some(layer => layer.name === customLayer.name && layer.source === customLayer.source);
+  getLayerByType(type: string): CustomLayer | undefined {
+    return this.layersSubject.value.find(layer => layer.type === type);
+  }
+
+  getLayerBySource(source: string): CustomLayer | undefined {
+    return this.layersSubject.value.find(layer => layer.source === source);
+  }
+
+  getLayersByTypeFromList(layers: CustomLayer[], type: string): CustomLayer | undefined {
+    return layers.find(layer => layer.type === type);
+  }
+
+  getLayersBySourceFromList(layers: CustomLayer[], source: string): CustomLayer | undefined {
+    return layers.find(layer => layer.source === source);
+  }
+
+  exists(customLayerFeatures: Feature[]): boolean {
+    return this.layersSubject.value.some(layer =>
+      this.areFeatureArraysEquivalent(layer.features, customLayerFeatures)
+    );
+  }
+
+  nameExists(customLayerName: string): boolean {
+    return this.layersSubject.value.some(layer => layer.name === customLayerName);
+  }
+
+  private areFeatureArraysEquivalent(features1: Feature[], features2: Feature[]): boolean {
+    if (features1.length !== features2.length) {
+      return false;
+    }
+
+    return features1.every((feature1, index) => {
+      const feature2 = features2[index];
+      return this.areFeaturesSimilar(feature1, feature2);
+    });
+  }
+
+  private areFeaturesSimilar(feature1: Feature, feature2: Feature): boolean {
+    return (
+      this.areGeometriesSimilar(feature1.getGeometry(), feature2.getGeometry()) &&
+      this.arePropertiesSimilar(feature1.getProperties(), feature2.getProperties())
+    );
+  }
+
+  private areGeometriesSimilar(geom1: any, geom2: any): boolean {
+    if (!geom1 || !geom2) {
+      return geom1 === geom2;
+    }
+    // Assuming MultiLineString from your example
+    return geom1.type === geom2.type &&
+      JSON.stringify(geom1.coordinates) === JSON.stringify(geom2.coordinates);
+  }
+
+  private arePropertiesSimilar(props1: Object, props2: Object): boolean {
+    const keys1 = Object.keys(props1);
+
+    return keys1.every(key => {
+      if (key === 'geometry') {
+        return this.areGeometriesSimilar(props1[key], props2[key]);
+      }
+      if (key === '_layerName_$' || key === '_type_$') {
+        return true;
+      }
+      return props1[key] === props2[key];
+    });
   }
 
   // Toggle the visibility of a layer by its ID
@@ -72,6 +135,7 @@ export class LayersService {
       }
     }
   }
+  
   onLayerVisibilityChange(layerId: string): void {
     const customLayer = this.getLayerById(layerId);
     if (customLayer) {
@@ -80,32 +144,36 @@ export class LayersService {
   }
 
   // Fetch layers from GeoServer workspace and add them to the state
-   async fetchLayersFromWorkspace(workspace: string): Promise<void> {
+  fetchLayersFromWorkspace(workspace: string): Observable<CustomLayer[]> {
     const url = `${this.geoServerUrl}/rest/workspaces/${workspace}/layers`;
-    try {
-      const response = await axios.get(url, {
+
+    return from(
+      axios.get(url, {
         auth: { username: 'admin', password: 'geoserver' },
-      });
-
-      if (response.status !== 200) {
-        throw new Error('Failed to fetch layers');
-      }
-
-      const layers = response.data.layers.layer;
-
-      for (const layer of layers) {
-        const createdLayer = await this.fetchLayerDetails(layer.href);
-        if (createdLayer) {
-          this.addLayer(createdLayer); // Add each layer to the state
+      })
+    ).pipe(
+      map(response => {
+        if (response.status !== 200) {
+          throw new Error('Failed to fetch layers');
         }
-      }
-
-      // Log the current state of layers
-      this.layers$.subscribe(layers => console.log(layers));
-    } catch (error) {
-      console.error('Error fetching layers:', error);
-      throw error;
-    }
+        const layers = response.data.layers.layer;
+        if (layers) {
+          return layers;
+        }
+      }),
+      mergeMap(layers => from(layers || [])), // Provide a fallback empty array
+      mergeMap((layer: any) =>
+        from(this.fetchLayerDetails(workspace, layer.href)).pipe(
+          map(createdLayer => {
+            if (!createdLayer) {
+              throw new Error(`Failed to fetch details for layer: ${layer.name}`);
+            }
+            return createdLayer;
+          })
+        )
+      ),
+      toArray()
+    );
   }
 
   // Get the next Z-Index value
@@ -113,8 +181,7 @@ export class LayersService {
     return 1000 - this.zIndexCounter++;
   }
 
-  // Fetch layer details and create a CustomLayer object
-  private async fetchLayerDetails(layerUrl: string): Promise<CustomLayer | null> {
+  private async fetchLayerDetails(workspace: string, layerUrl: string): Promise<CustomLayer | null> {
     try {
       const response = await axios.get(layerUrl, {
         auth: { username: 'admin', password: 'geoserver' },
@@ -123,7 +190,8 @@ export class LayersService {
       let layer: Layer | null = null;
       let source: 'WFS' | 'WMS';
       let features: Feature[] = [];
-      let style: StyleLike | undefined;
+
+      let style: Style | undefined;
       let inStyle: Style;
 
       if (layerDetails.type === 'VECTOR') {
@@ -132,9 +200,9 @@ export class LayersService {
           vectorStyle = await this.styleService.getStyleForLayer(layerDetails);
           console.log('fetchedstyleLocStor', vectorStyle);
           this.styleService.saveStyle(layerDetails.name, vectorStyle);
-          if (!vectorStyle) {
-            vectorStyle = this.styleService.createVectorLayerStyle(layerDetails);
-          }
+        }
+        if (!vectorStyle) {
+          vectorStyle = this.styleService.createVectorLayerStyle(layerDetails);
         }
 
         const vectorSource = new VectorSource({
@@ -152,10 +220,15 @@ export class LayersService {
         source = 'WFS';
 
         const featureResponse = await axios.get(
-          `${this.geoServerUrl}/wfs?service=WFS&version=1.0.0&request=GetFeature&typeName=${layerDetails.name}&outputFormat=application/json&srsname=EPSG:3857`,
+          `${this.geoServerUrl}/wfs?service=WFS&version=1.0.0&request=GetFeature&typeName=${workspace}:${layerDetails.name}&outputFormat=application/json&srsname=EPSG:3857`,
           { auth: { username: 'admin', password: 'geoserver' } }
         );
         features = new GeoJSON().readFeatures(featureResponse.data);
+        features.forEach(feature => {
+          feature.set('_layerName_$', layerDetails.name);
+          feature.set('_type_$', 'Feature')
+        });
+
         vectorSource.addFeatures(features);
       } 
       else if (layerDetails.type === 'RASTER') {
@@ -168,13 +241,10 @@ export class LayersService {
         });
         source = 'WMS';
       }
+
       if (layer) {
-        layer.set('name', layerDetails.name);
-        layer.setVisible(false);
         layer.setZIndex(this.getNextZIndex());
-        console.log(`Set Z-Index to ${layer.getZIndex()} for layer ${layer.get('name')}`);
       }
-      console.log('instyle', inStyle);
       return { id: uuidv4(), name: layerDetails.name, type: layerDetails.type, layer, source, features, style, inStyle };
     } catch (error) {
       console.error('Error fetching layer details:', error);
@@ -186,6 +256,19 @@ export class LayersService {
   addLayer(customLayer: CustomLayer): void {
     const currentLayers = this.layersSubject.value;
     this.layersSubject.next([...currentLayers, customLayer]);
+  }
+
+  addFeatures(customLayer: CustomLayer): void {
+    const currentMap = this.originalFeaturesSubject.getValue();
+    if (!currentMap.has(customLayer.id)) {
+      currentMap.set(customLayer.id, [...customLayer.features]);
+      this.originalFeaturesSubject.next(currentMap); // Emit the new state
+    }
+  }
+
+  getFeaturesById(layerId: string): Feature[] {
+    const currentMap = this.originalFeaturesSubject.getValue();
+    return currentMap.get(layerId) || []; // Return the features or an empty array if not found
   }
 
   updateLayers(layers: CustomLayer[]): void {

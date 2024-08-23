@@ -1,5 +1,5 @@
 import { Component, OnDestroy, AfterViewInit, Input } from '@angular/core';
-import { Draw } from 'ol/interaction';
+import { Draw, Modify } from 'ol/interaction';
 import { Style, Stroke, Fill, Circle as CircleStyle } from 'ol/style';
 import { Polygon } from 'ol/geom';
 import { MapService } from 'app/modules/admin/services/map.service';
@@ -24,7 +24,8 @@ export class SurfaceComponent implements OnDestroy, AfterViewInit {
 
   private map: Map;
   private draw: Draw;
-  private vector: any;
+  private modify: Modify;
+  private vector: VectorLayer<VectorSource>;
   private source: VectorSource;
   private pointerMoveListener: any;
   private indicatorOverlay: Overlay;
@@ -65,19 +66,13 @@ export class SurfaceComponent implements OnDestroy, AfterViewInit {
 
   ngOnDestroy(): void {
     this.clearOverlays();
-
-    if (this.map) {
-      this.map.removeLayer(this.vector);
-    }
-    if (this.pointerMoveListener) {
-      this.map.un('pointermove', this.pointerMoveListener);
-    }
+    this.clearMeasurement();
   }
 
   private showIndicator(): void {
     const indicatorElement = document.createElement('div');
     indicatorElement.className = 'indicator-overlay';
-    indicatorElement.innerHTML = '<div class="indicator-message">Click to start measuring</div>';
+    indicatorElement.innerHTML = '<div class="indicator-message">Cliquer pour commencer à mesurer</div>';
     
     this.indicatorOverlay = new Overlay({
       element: indicatorElement,
@@ -113,6 +108,13 @@ export class SurfaceComponent implements OnDestroy, AfterViewInit {
     }
   }
 
+  private formatArea(area: number): string {
+    if (area > 1000000) {
+      return `${(area / 1000000).toFixed(2)} km²`;
+    }
+    return `${area.toFixed(2)} m²`;
+  }
+  
   startSurfaceMeasure(): void {
     if (this.isMeasuring) {
       console.log('Measurement is already in progress.');
@@ -161,7 +163,7 @@ export class SurfaceComponent implements OnDestroy, AfterViewInit {
       element.className = 'area-overlay';
       element.innerHTML = `
         <div class="area-info">
-          <span id="areaText">${area.toFixed(2)} m²</span>
+          <span id="areaText">Surface: ${this.formatArea(area)}</span>
           <div class="separator"></div>
           <button id="closeButton" class="close-button">X</button>
         </div>
@@ -186,6 +188,27 @@ export class SurfaceComponent implements OnDestroy, AfterViewInit {
 
       this.map.removeInteraction(this.draw);
       this.isMeasuring = false;
+
+      // Add Modify interaction
+      this.modify = new Modify({ source: this.source });
+      this.map.addInteraction(this.modify);
+
+      this.modify.on('modifyend', (evt) => {
+        const features = evt.features.getArray();
+        if (features.length > 0) {
+          const feature = features[0]; // Assuming you're only modifying one feature
+          const geom = feature.getGeometry() as Polygon;
+          const area = geom.getArea();
+          const centroid = geom.getInteriorPoint().getCoordinates();
+      
+          // Update overlay content and position
+          const element = this.overlays[0].getElement(); // Assuming you have only one overlay
+          if (element) {
+            element.querySelector('#areaText').innerHTML = `Surface: ${this.formatArea(area)}`;
+            this.overlays[0].setPosition(centroid);
+          }
+        }
+      });      
     });
   }
 
@@ -199,6 +222,7 @@ export class SurfaceComponent implements OnDestroy, AfterViewInit {
         this.map.un('pointermove', this.pointerMoveListener);
       }
       this.map.removeInteraction(this.draw);
+      this.map.removeInteraction(this.modify);
     }
   }
 

@@ -3,7 +3,7 @@
 
 <!-- Navigation -->
 <!-- Jl'ai enlevé Je dois la chercher à partir d'une autre version -->
- 
+
 <!-- Wrapper -->
 <div class="flex w-full min-w-0 flex-auto flex-col">
     <!-- Header -->
@@ -15,17 +15,64 @@
         </button> -->
         <!-- Components -->
         <div class="ml-auto flex items-center space-x-0.5 pl-2 sm:space-x-2">
-            <surface-measure></surface-measure>
-            <distance-measure></distance-measure>
-            <button mat-icon-button (click)="openFileInput()" [matTooltip]="'Importer une couche'">
-                <mat-icon [svgIcon]="'heroicons_outline:arrow-down-tray'"></mat-icon>
-            </button>
-            <fuse-fullscreen class="hidden md:block"></fuse-fullscreen>
-            <shortcuts></shortcuts>
+            <div>
+                <button mat-icon-button (click)="goToPreviousView()"
+                    [disabled]="!(_viewHistoryService.canGoToPreviousView$ | async)" [matTooltip]="'Revenir en arrière'">
+                    <mat-icon>arrow_back</mat-icon>
+                </button>
+                <button mat-icon-button (click)="goToNextView()"
+                    [disabled]="!(_viewHistoryService.canGoToNextView$ | async)" [matTooltip]="'Avancer'">
+                    <mat-icon>arrow_forward</mat-icon>
+                </button>
+            </div>
+          
+            <!-- Printing button  -->
             <button mat-icon-button (click)="imprimerCarte()" [matTooltip]="'Imprimer la carte'">
                 <mat-icon>print</mat-icon>
             </button>
 
+            <!-- Toggle button for measurement panel -->
+            <button mat-icon-button (click)="toggleMeasurementPanel()" matTooltip="Mesures">
+                <mat-icon
+                    [svgIcon]="isMeasurementPanelVisible ? 'heroicons_outline:x-mark' : 'heroicons_outline:pencil-square'"></mat-icon>
+            </button>
+
+            <!-- Measurement panel -->
+            @if (isMeasurementPanelVisible) {
+            <div class="measurement-panel">
+                <circle-measure></circle-measure>
+                <surface-measure></surface-measure>
+                <distance-measure></distance-measure>
+            </div>
+            }
+            <!-- Layers Filter Panel -->
+            <button mat-icon-button (click)="toggleFilterPanel()" [matTooltip]="'Filtrer les couches'">
+                <mat-icon
+                    [svgIcon]="isFilterPanelVisible ? 'heroicons_outline:x-mark' : 'heroicons_outline:funnel'"></mat-icon>
+            </button>
+            @if (isFilterPanelVisible) {
+            <app-layers-filter></app-layers-filter>
+            }
+
+            <button mat-icon-button (click)="openFileInput()" [matTooltip]="'Importer une couche locale'">
+                <mat-icon [svgIcon]="'heroicons_outline:arrow-down-tray'"></mat-icon>
+            </button>
+            <!-- Server Import Panel -->
+            <button mat-icon-button (click)="toggleImportPanel()" [matTooltip]="'Importer à partir d\'un serveur'">
+                <mat-icon
+                    [svgIcon]="_quickChatService.isImportPanelVisible ? 'heroicons_outline:x-mark' : 'heroicons_outline:cloud-arrow-down'"></mat-icon>
+            </button>
+            @if (_quickChatService.isImportPanelVisible) {
+            <app-server-import></app-server-import>
+            }
+
+            <button mat-icon-button (click)="geolocate()"
+                [matTooltip]="this._mapService.isGeolocationActive ? 'Désactiver la localisation' : 'Me localiser'">
+                <mat-icon
+                    [svgIcon]="this._mapService.isGeolocationActive ? 'heroicons_outline:x-mark' : 'heroicons_outline:map-pin'"></mat-icon>
+            </button>
+            <shortcuts></shortcuts>
+            <fuse-fullscreen class="hidden md:block"></fuse-fullscreen>
         </div>
     </div>
 
