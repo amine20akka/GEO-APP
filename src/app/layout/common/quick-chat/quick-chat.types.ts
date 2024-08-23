@@ -1,6 +1,7 @@
 import { Layer } from "ol/layer";
 import { Feature } from 'ol';
 import { Style } from "ol/style";
+import { Source } from "ol/source";
 
 export interface Chat {
     id?: string;
@@ -51,8 +52,9 @@ export interface CustomLayer {
     id: string;
     name: string;
     type: 'VECTOR' | 'RASTER';
-    layer: Layer;
+    layer: Layer<Source>;
     source: 'WFS' | 'IMPORT' | 'WMS';
     features: Feature[];
     style?: Style;
+    inStyle?: Style;
   }  

@@ -1,217 +1,361 @@
-<div class="fixed bottom-0 top-0 w-full sm:w-96 lg:sticky lg:left-full lg:h-screen lg:w-16 lg:shadow">
-    <div class="bg-card flex h-full w-full flex-col transition-transform duration-400 ease-drawer sm:w-96" [ngClass]="{
-            '-translate-x-full shadow sm:-translate-x-96 lg:-translate-x-80':
-                opened,
-            'translate-x-0': !opened,
-        }">
-        <!-- Header -->
-        <div class="quick-chat-header flex flex-0 cursor-pointer items-center justify-start" (click)="toggle()">
-            <!-- Toggle -->
-            @if (!opened || (opened && !selectedLayer)) {
-            <div class="flex flex-auto items-center justify-center">
-                <div class="flex w-16 flex-0 items-center justify-center">
-                    <mat-icon [matTooltip]="tooltip || 'Couches'" class="icon-size-6" [svgIcon]="
-                                'heroicons_outline:square-3-stack-3d'
-                            "></mat-icon>
-                </div>
-                <div class="text-secondary text-lg font-medium">
-                    Couches
-                </div>
-                <button class="ml-auto mr-4" mat-icon-button>
-                    <mat-icon [svgIcon]="'heroicons_outline:x-mark'"></mat-icon>
-                </button>
+<div class="fixed bottom-0 top-0   lg:sticky lg:left lg:h-screen lg:w-28 lg:shadow">
+  
+    <!-- Header -->
+    <div class="quick-chat-container" [ngClass]="{'opened': opened}" >
+      <!-- Header -->
+      <div class="quick-chat-header flex flex-0 cursor-pointer items-center justify-start" (click)="toggle()">
+        <!-- Toggle -->
+        @if (!opened ) {
+        <div class="flex w-full items-center justify-center">
+          <div class="flex w-8 flex-0 items-center justify-center">
+            <mat-icon [matTooltip]="tooltip || 'Couches'" class="icon-size-7"
+              [svgIcon]="'heroicons_outline:square-3-stack-3d'"></mat-icon>
+          </div>
+          <!-- <div class="text-secondary text-lg font-medium">
+            Couches
+          </div> -->
+          
+          
+        </div>
+        }
+        @if (opened){
+          <button class="ml-auto mr-4" mat-icon-button>
+            <mat-icon [svgIcon]="'heroicons_outline:x-mark'"></mat-icon>
+          </button>
+        }
+
+        <!-- layer info -->
+        @if (opened && selectedLayer) {
+        <div class="ml-3 flex flex-auto items-center">
+          <div class="relative flex h-10 w-10 flex-0 items-center justify-center">
+            <div
+              class="flex h-full w-full items-center justify-center rounded-full bg-gray-200 text-lg uppercase text-gray-600 dark:bg-gray-700 dark:text-gray-200">
+              {{ selectedLayer.name.charAt(0) }}
             </div>
-            }
+          </div>
+          <div class="ml-4 truncate text-lg font-medium leading-5">
+            {{ formatLayerName(selectedLayer.name) }}
+          </div>
+          <button class="ml-auto mr-4" mat-icon-button>
+            <mat-icon [svgIcon]="'heroicons_outline:x-mark'"></mat-icon>
+          </button>
+        </div>
+        }
+      </div>
 
-            <!-- layer info -->
-            @if (opened && selectedLayer) {
-            <div class="ml-3 flex flex-auto items-center">
-                <div class="relative flex h-10 w-10 flex-0 items-center justify-center">
-
+      <!-- Content -->
+      <div class="quick-chat-content flex flex-auto overflow-hidden border-t">
+        <!-- layers list -->
+        <div class="layer-list-container h-full flex-0 overflow-y-auto overscroll-y-contain" fuseScrollbar
+          [class.can-expand]="opened" [fuseScrollbarOptions]="{ wheelPropagation: false }">
+          <!-- <button class="view-toggle-btn" (click)="toggleExpanded()">
+            <mat-icon>{{ expanded ? 'chevron_left' : 'chevron_right' }}</mat-icon>
+          </button> -->
+          <div class="layers-wrapper">
+            <!-- Couches GeoServer -->
+            <div class="mb-2">
+              <h3 class="text-xs mb-2 py-1 text-center font-semibold tracking-wider text-gray-500 border-b border-gray-200">
+                Couches publiées
+              </h3>
+              @if (arLayersLoaded()) {
+                @for (layer of layers | filterLayers:'WFS':'WMS'; track trackByFn($index, layer); let i = $index) {
+                  <div class="relative layer-item" [attr.data-index]="i">
                     <div
-                        class="flex h-full w-full items-center justify-center rounded-full bg-gray-200 text-lg uppercase text-gray-600 dark:bg-gray-700 dark:text-gray-200">
-                        {{ selectedLayer.name.charAt(0) }}
+                      class="flex justify-between cursor-pointer items-center px-3 py-2 transition-all duration-200 ease-in-out"
+                      [ngClass]="{
+                        'bg-primary-50 dark:bg-gray-600': selectedLayer && selectedLayer === layer,
+                        'opacity-50': draggedIndex === i
+                      }"
+                      (click)="handleLayerClick(layer)"
+                      draggable="true"
+                      (dragstart)="onDragStart($event, i)"
+                      (dragend)="onDragEnd($event)"
+                      (dragover)="onDragOver($event, i)"
+                      (dragleave)="onDragLeave()"
+                      (drop)="onDrop($event, i)"
+                    >
+                      <div class="flex items-center">
+                        <div class="legend-container w-6 h-6 flex-shrink-0 mr-2" [innerHTML]="getOpenLayersLegend(layer)"></div>
+                        <span class="">{{ formatLayerName(layer.name) }}</span>
+                        <!-- <span class="short-name">{{ formatLayerName(layer.name).substring(0, 1) }}</span> -->
+
+
+                      </div>
                     </div>
-
-                </div>
-                <div class="ml-4 truncate text-lg font-medium leading-5">
-                    {{ selectedLayer.name }}
-                </div>
-                <button class="ml-auto mr-4" mat-icon-button>
-                    <mat-icon [svgIcon]="'heroicons_outline:x-mark'"></mat-icon>
-                </button>
-            </div>
-            }
-        </div>
-
-        <!-- Content -->
-        <div class="flex flex-auto overflow-hidden border-t">
-            <!-- layers list -->
-            <div class="h-full w-16 flex-0 overflow-y-auto overscroll-y-contain sm:overflow-hidden sm:overscroll-auto"
-                fuseScrollbar [fuseScrollbarOptions]="{ wheelPropagation: false }">
-
-                <div class="flex-auto">
-                    <!-- Couches GeoServer -->
-                    <div class="mb-2">
-                        <h3
-                            class="text-xs mb-2 py-1 text-center font-semibold tracking-wider text-gray-500 border-b border-gray-200">
-                            Couches GeoServer</h3>
-                        @if ((layers | filterLayers:'WFS':'WMS').length > 0) {
-                        @for (layer of layers | filterLayers:'WFS':'WMS'; track trackByFn($index, layer); let i =
-                        $index) {
-                        <div class="relative" [attr.data-index]="i">
-                            <div class="h-1 w-full transition-all duration-200 ease-in-out"
-                                [ngClass]="{'bg-blue-200 h-2': draggedOverIndex === i}"></div>
-                            <div class="flex justify-center cursor-pointer items-center px-3 py-2 transition-all duration-200 ease-in-out"
-                                [ngClass]="{
-                                       'hover:bg-gray-100 dark:hover:bg-gray-700': !selectedLayer || selectedLayer !== layer,
-                                       'bg-primary-50 dark:bg-gray-600': selectedLayer && selectedLayer === layer,
-                                       'opacity-50': draggedIndex === i
-                                     }" (click)="selectedLayer = layer" draggable="true"
-                                (click)="onLayerVisibilityChange(layer.id)">
-                                <div [matTooltip]="tooltip || 'Cliquer pour visualiser'"
-                                    class="flex h-8 w-8 items-center justify-center rounded-full bg-gray-200 text-xs uppercase text-gray-600 dark:bg-gray-700 dark:text-gray-200 shadow-sm">
-                                    {{ layer.name }}
-                                </div>
-                            </div>
-                        </div>
-                        }
-                        } @else {
-                            <div class="flex flex-col justify-center items-center pb-3">
-                                <p class="text-xs justify-center items-center text-center py-2">Importer d'ici:</p>
-                                <button class="flex rounded-full bg-blue-100" mat-icon-button (click)="toggleImportPanel()"
-                                    [matTooltip]="_quickChatService.isImportPanelVisible ? 'Annuler' : 'Importer une couche à partir d\'un serveur'">
-                                    <mat-icon [svgIcon]="_quickChatService.isImportPanelVisible ? 'heroicons_outline:x-mark' : 'heroicons_outline:cloud-arrow-down'"></mat-icon>
-                                </button>
-                            </div>
-                        }
-                    </div>
-
-                    <!-- Couches importées -->
-                    <div class="mt-4">
-                        <h3
-                            class="text-xs mb-2 py-1 text-center font-semibold tracking-wider text-gray-500 border-b border-t border-gray-200">
-                            Couches locales
-                        </h3>
-                        @if ((layers | filterLayers:'IMPORT').length > 0) {
-                        @for (layer of layers | filterLayers:'IMPORT'; track trackByFn($index, layer); let i = $index) {
-                        <div class="relative" [attr.data-index]="i">
-                            <div class="h-1 w-full transition-all duration-200 ease-in-out"
-                                [ngClass]="{'bg-blue-200 h-2': draggedOverIndex === i}"></div>
-                            <div class="flex justify-center cursor-pointer items-center px-3 py-2 transition-all duration-200 ease-in-out"
-                                [ngClass]="{
-                         'hover:bg-gray-100 dark:hover:bg-gray-700': !selectedLayer || selectedLayer !== layer,
-                         'bg-primary-50 dark:bg-gray-600': selectedLayer && selectedLayer === layer,
-                         'opacity-50': draggedIndex === i
-                     }" (click)="selectedLayer = layer" draggable="true" (click)="onLayerVisibilityChange(layer.id)">
-                                <div [matTooltip]="tooltip || 'Cliquer pour visualiser'"
-                                    class="flex h-8 w-8 py-1 items-center justify-center rounded-full bg-gray-200 text-xs uppercase text-gray-600 dark:bg-gray-700 dark:text-gray-200 shadow-sm">
-                                    {{ layer.name }}
-                                </div>
-                            </div>
-                        </div>
-                        }
-                        } @else {
-                        <div class="flex flex-col justify-center items-center pb-3">
-                            <p class="text-xs justify-center items-center text-center py-2">Importer d'ici:</p>
-                            <button class="flex rounded-full bg-blue-100" mat-icon-button (click)="openFileInput()"
-                                [matTooltip]="'Importer une couche locale'">
-                                <mat-icon [svgIcon]="'heroicons_outline:arrow-down-tray'"></mat-icon>
-                            </button>
-                        </div>
-                        }
-                    </div>
-                </div>
-            </div>
-
-            <!-- layer management -->
-            <div class="flex flex-auto flex-col overflow-hidden border-l bg-card">
-                @if (selectedLayer) {
-                <mat-card class="m-4">
-                    <mat-card-header>
-                        <mat-card-title>{{ selectedLayer.name }}
-                            <button mat-icon-button (click)="openAttributeTable(selectedLayer.id)"
-                                [matTooltip]="'Ouvrir la table attributaire'">
-                                <mat-icon [svgIcon]="'heroicons_outline:table-cells'"></mat-icon>
-                            </button>
-                        </mat-card-title>
-                    </mat-card-header>
-                    <!-- <mat-card-content>
-                        <mat-list>
-                            <mat-list-item>
-                                <span matListItemTitle>Opacity</span>
-                                <span matListItemLine>{{ selectedLayer.layer.getOpacity() | percent }}</span>
-                            </mat-list-item>
-                            <mat-list-item>
-                                @if (isLayerLine(selectedLayer.features)) {
-                                <span matListItemTitle>Color</span>
-                                <span matListItemLine>
-                                    <span class="color-preview"
-                                        [style.background-color]="selectedLayer.style.getStroke().getColor()"></span>
-                                    {{ selectedLayer.style.getStroke().getColor() || 'None' }}
-                                </span>
-                                } @else {
-                                <span matListItemTitle>Color</span>
-                                <span matListItemLine>
-                                    <span class="color-preview"
-                                        [style.background-color]="selectedLayer.style.getFill().getColor()"></span>
-                                    {{ selectedLayer.style.getFill().getColor() || 'None' }}
-                                </span>
-                                }
-                            </mat-list-item>
-                        </mat-list>
-                    </mat-card-content> -->
-                </mat-card>
-
-                <!-- <mat-tab-group mat-stretch-tabs="false" mat-align-tabs="start" class="m-4" animationDuration="0ms">
-                    <mat-tab label="Color">
-                        <ng-template matTabContent>
-                            <div class="p-4">
-                                @if (isLayerLine(selectedLayer.features)) {
-                                <app-color-pie-chart [selectedColor]="selectedLayer.style.getStroke().getColor()">
-                                </app-color-pie-chart>
-                                <mat-form-field class="w-full mt-4">
-                                    <mat-label>Selected Color</mat-label>
-                                    <input matInput [value]="selectedLayer.style.getStroke().getColor() || 'None'"
-                                        readonly>
-                                </mat-form-field>
-                                } @else {
-                                <app-color-pie-chart [selectedColor]="selectedLayer.style.getFill().getColor()">
-                                </app-color-pie-chart>
-                                <mat-form-field class="w-full mt-4">
-                                    <mat-label>Selected Color</mat-label>
-                                    <input matInput [value]="selectedLayer.style.getFill().getColor() || 'None'"
-                                        readonly>
-                                </mat-form-field>
-                                }
-                            </div>
-                        </ng-template>
-                    </mat-tab>
-                    <mat-tab label="Opacity">
-                        <ng-template matTabContent>
-                            <div class="p-4">
-                                <mat-slider class="w-full" color="primary" [min]="0" [max]="1" [step]="0.01"
-                                    [discrete]="true">
-                                    <input matSliderThumb>
-                                </mat-slider>
-                                <mat-form-field class="w-full mt-4">
-                                    <mat-label>Opacity</mat-label>
-                                    <input matInput [value]="selectedLayer.layer.getOpacity() | percent" readonly>
-                                </mat-form-field>
-                            </div>
-                        </ng-template>
-                    </mat-tab>
-                </mat-tab-group>
-                } @else { -->
-                <div class="flex h-full w-full flex-auto flex-col items-center justify-center p-4">
-                    <mat-icon class="text-6xl text-hint" svgIcon="layers"></mat-icon>
-                    <h2 class="mt-4 text-center text-2xl font-medium text-secondary">Sélectionner une couche</h2>
-                    <p class="mt-2 text-center text-hint">Choisir une couche dans la liste pour voir et modifier ses
-                        propriétés
-                    </p>
-                </div>
+                  </div>
                 }
+              } @else {
+                <p class="text-center text-sm text-gray-500">Loading layers...</p>
+              }
             </div>
+            <!-- Couches importées -->
+            <div class="mt-4">
+              <h3 class="text-xs mb-2 py-1 text-center font-semibold tracking-wider text-gray-500 border-b border-t border-gray-200">
+                Couches importées
+              </h3>
+              @if (arLayersLoaded() && (layers | filterLayers:'IMPORT').length > 0) {
+                @for (layer of layers | filterLayers:'IMPORT'; track trackByFn($index, layer); let i = $index) {
+                  <div class="relative layer-item" [attr.data-index]="i">
+                    <div class="flex justify-center cursor-pointer items-center px-3 py-2 transition-all duration-200 ease-in-out"
+                         [ngClass]="{
+                           'hover:bg-gray-100 dark:hover:bg-gray-700': !selectedLayer || selectedLayer !== layer,
+                           'bg-primary-50 dark:bg-gray-600': selectedLayer && selectedLayer === layer,
+                           'opacity-50': draggedIndex === i
+                         }"
+                         (click)="handleLayerClick(layer)"
+                         draggable="true"
+                         (dragstart)="onDragStart($event, i)" 
+                         (dragend)="onDragEnd($event)"
+                         (dragover)="onDragOver($event, i)" 
+                         (dragleave)="onDragLeave()" 
+                         (drop)="onDrop($event, i)">
+                      <div class="layer-name flex items-center justify-center text-s uppercase text-gray-600 dark:bg-gray-700 dark:text-gray-200 shadow-sm">
+                        <mat-icon [fontIcon]="getGeometryIcon(getGeometryType(layer))" 
+                                  class="short-name" 
+                                  [matTooltip]="!opened ? getGeometryType(layer) : ''"
+                                  matTooltipPosition="above"
+                                  [matTooltipDisabled]="opened">
+                        </mat-icon>
+                        <span class="short-name">{{ formatLayerName(layer.name).substring(0, 1) }}</span>
+                        <span class="full-name">{{ formatLayerName(layer.name) }}</span>
+                      </div>
+                    </div>
+                  </div>
+                }
+              } @else {
+                <div class="flex flex-col justify-center items-center pb-3">
+                  <p class="text-xs justify-center items-center text-center py-2">Importer ici :</p>
+                  <button class="flex rounded-full bg-blue-100" mat-icon-button (click)="openFileInput()"
+                          [matTooltip]="'Importer une couche'">
+                    <mat-icon [svgIcon]="'heroicons_outline:arrow-down-tray'"></mat-icon>
+                  </button>
+                </div>
+              }
+            </div>
+          </div>
         </div>
+        
+        <!-- layer management -->
+        <div class="layer-management flex-none overflow-hidden border-l bg-card">
+          @if (MMapselectedLayer) {
+          <div #scrollContainer class="overflow-y-auto h-full bg-white dark:bg-gray-800">
+            <mat-card class="m-2 shadow-sm">
+              <mat-card-header class="pb-2 border-b">
+                <mat-card-title class="text-lg font-semibold text-gray-800 dark:text-white">
+                  {{ MMapselectedLayer.name }}: {{ getGeometryType(MMapselectedLayer) }}
+                </mat-card-title>
+              </mat-card-header>
+              <mat-card-content class="pt-4">
+                <mat-expansion-panel #expansionPanel class="shadow-none border" (opened)="panelOpened()"
+                  (closed)="panelClosed()">
+                  <mat-expansion-panel-header class="bg-gray-50 dark:bg-gray-700">
+                    <mat-panel-title class="text-sm font-medium">
+                      Details
+                    </mat-panel-title>
+                    <mat-panel-description>
+                      <mat-icon class="text-gray-500">expand_more</mat-icon>
+                    </mat-panel-description>
+                  </mat-expansion-panel-header>
+                  <mat-list class="py-0">
+                    <mat-list-item>
+                      <span matListItemTitle class="text-sm font-medium text-gray-600 dark:text-gray-300">Type</span>
+                      <span matListItemLine class="text-sm text-gray-800 dark:text-gray-100">{{ MMapselectedLayer.type
+                        }}</span>
+                    </mat-list-item>
+                    <mat-list-item>
+                      <span matListItemTitle class="text-sm font-medium text-gray-600 dark:text-gray-300">Source</span>
+                      <span matListItemLine class="text-sm text-gray-800 dark:text-gray-100">{{ MMapselectedLayer.source
+                        }}</span>
+                    </mat-list-item>
+                  </mat-list>
+                </mat-expansion-panel>
+
+                <div #mapContainer class="mt-4 transition-all duration-300 ease-in-out"
+                  [ngClass]="{'sticky top-0 z-10': isMapSticky}">
+                  <app-mini-map [selectedLayer]="MMapselectedLayer"
+                    class="w-full h-48 rounded overflow-hidden"></app-mini-map>
+                </div>
+                <div class="mt-4 flex justify-center space-x-4">
+                  <!-- <button mat-icon-button [color]="isPreviewMode ? 'accent' : 'primary'" (click)="togglePreviewMode()"
+                  matTooltip="Toggle Preview Mode">
+                  <mat-icon>visibility</mat-icon>
+                </button> -->
+                  <button mat-icon-button (click)="togglePreviewMode()" matTooltip="Toggle Preview Mode">
+                    <mat-icon [ngStyle]="{'color': preview ? 'blue' : 'gray'}">visibility</mat-icon>
+                  </button>
+
+                  <!-- Backward Button -->
+                  <button mat-icon-button color="primary" (click)="goBackward()" matTooltip="Go Backward">
+                    <mat-icon>arrow_back</mat-icon>
+                  </button>
+                  <!-- Preview Mode Button -->
+
+
+                  <!-- Save Button -->
+                  <button mat-icon-button color="primary" (click)="saveMapState()" matTooltip="Save Map State">
+                    <mat-icon>save</mat-icon>
+                  </button>
+
+                  <!-- Forward Button -->
+                  <button mat-icon-button color="primary" (click)="goForward()" matTooltip="Go Forward">
+                    <mat-icon>arrow_forward</mat-icon>
+                  </button>
+
+                  <!-- Go to Mini Map Button -->
+                  <button mat-icon-button color="primary" (click)="navigateToMiniMap()" matTooltip="Go to Mini Map">
+                    <mat-icon>map</mat-icon>
+                  </button>
+                </div>
+
+              </mat-card-content>
+            </mat-card>
+
+            <mat-tab-group mat-stretch-tabs="false" mat-align-tabs="start"
+              class="mx-2 mt-4 bg-white dark:bg-gray-800 rounded shadow-sm" animationDuration="0ms">
+              <mat-tab label="Color">
+                <ng-template matTabContent>
+                  <div class="p-4 space-y-4">
+                    <div>
+                      <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Fill Color</label>
+                      <div class="flex items-center space-x-2">
+                        <input type="color" [ngModel]="getLayerColor()" (ngModelChange)="updateLayerColor($event)"
+                          class="w-10 h-10 rounded">
+                        <mat-form-field class="flex-grow">
+                          <input matInput [ngModel]="getLayerColor()" (ngModelChange)="updateLayerColor($event)">
+                        </mat-form-field>
+                        <button mat-icon-button color="primary" (click)="resetToInitialColor()"
+                          matTooltip="Reset to initial color">
+                          <mat-icon>refresh</mat-icon>
+                        </button>
+                      </div>
+                    </div>
+
+                    @if (getGeometryType(MMapselectedLayer) !== 'LineString' && getGeometryType(MMapselectedLayer) !==
+                    'MultiLineString') {
+                    <div>
+                      <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Stroke
+                        Color</label>
+                      <div class="flex items-center space-x-2">
+                        <input type="color" [ngModel]="getLayerStrokeColor()"
+                          (ngModelChange)="updateLayerStrokeColor($event)" class="w-10 h-10 rounded">
+                        <mat-form-field class="flex-grow">
+                          <input matInput [ngModel]="getLayerStrokeColor()"
+                            (ngModelChange)="updateLayerStrokeColor($event)">
+                        </mat-form-field>
+                        <button mat-icon-button color="primary" (click)="resetToInitialStrokeColor()"
+                          matTooltip="Reset to initial stroke color">
+                          <mat-icon>refresh</mat-icon>
+                        </button>
+                      </div>
+                    </div>
+                    }
+
+                    <div>
+                      <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Stroke
+                        Width</label>
+                      <mat-slider class="w-full" color="primary" [min]="0" [max]="10" [step]="0.1" [discrete]="true">
+                        <input matSliderThumb [value]="getLayerStrokeWidth()"
+                          (valueChange)="updateLayerStrokeWidth($event)">
+                      </mat-slider>
+
+                      <mat-form-field class="w-full mt-2">
+                        <input matInput type="number" [ngModel]="getLayerStrokeWidth()"
+                          (ngModelChange)="updateLayerStrokeWidth($event)" min="0" max="10" step="0.1">
+                      </mat-form-field>
+                    </div>
+                  </div>
+                </ng-template>
+              </mat-tab>
+
+              <mat-tab label="Opacity">
+                <ng-template matTabContent>
+                  <div class="p-4 space-y-4">
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Layer Opacity</label>
+                    <mat-slider class="w-full" color="primary" [min]="0" [max]="1" [step]="0.01" [discrete]="true">
+                      <input matSliderThumb [value]="selectedLayer?.layer?.getOpacity() ?? 1"
+                        (valueChange)="updateLayerOpacity($event)">
+                    </mat-slider>
+                    <mat-form-field class="w-full mt-2">
+                      <input matInput type="number" [ngModel]="selectedLayer?.layer?.getOpacity() ?? 1"
+                        (ngModelChange)="updateLayerOpacity($event)" min="0" max="1" step="0.01">
+                    </mat-form-field>
+                  </div>
+                </ng-template>
+              </mat-tab>
+
+              @if (getGeometryType(MMapselectedLayer) === 'Point' || getGeometryType(MMapselectedLayer) ===
+              'MultiPoint')
+              {
+              <mat-tab label="Symbologie">
+                <ng-template matTabContent>
+                  <div class="p-4 space-y-4">
+                    <mat-form-field class="w-full">
+                      <mat-label>Select Symbol</mat-label>
+                      <mat-select [(value)]="selectedSymbol" (selectionChange)="updateLayerSymbol()">
+                        <mat-select-trigger>
+                          <mat-icon>{{getSelectedSymbolIcon()}}</mat-icon>
+                          <span class="ml-2">{{getSelectedSymbolLabel()}}</span>
+                        </mat-select-trigger>
+                        @for (symbol of availableSymbols; track symbol) {
+                        <mat-option [value]="symbol.value">
+                          <mat-icon>{{symbol.icon}}</mat-icon>
+                          <span class="ml-2">{{symbol.label}}</span>
+                        </mat-option>
+                        }
+                      </mat-select>
+                    </mat-form-field>
+
+                    <div>
+                      <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Symbol Size</label>
+                      <mat-slider class="w-full" [min]="1" [max]="100" [step]="1">
+                        <input matSliderThumb [(ngModel)]="symbolSize" (ngModelChange)="updateLayerSymbol()">
+                      </mat-slider>
+                      <mat-form-field class="w-full mt-2">
+                        <input matInput type="number" [(ngModel)]="symbolSize" (ngModelChange)="updateLayerSymbol()"
+                          min="12" max="48">
+                      </mat-form-field>
+                    </div>
+
+                    <div>
+                      <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Symbol
+                        Color</label>
+                      <div class="flex items-center space-x-2">
+                        <input type="color" [(ngModel)]="symbolColor" (ngModelChange)="updateLayerSymbol()"
+                          class="w-10 h-10 rounded">
+                        <mat-form-field class="flex-grow">
+                          <input matInput [(ngModel)]="symbolColor" (ngModelChange)="updateLayerSymbol()">
+                        </mat-form-field>
+                      </div>
+                    </div>
+
+                    <div>
+                      <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Symbol
+                        Opacity</label>
+                      <mat-slider class="w-full" [min]="0" [max]="1" [step]="0.1">
+                        <input matSliderThumb [(ngModel)]="symbolOpacity" (ngModelChange)="updateLayerSymbol()">
+                      </mat-slider>
+                      <mat-form-field class="w-full mt-2">
+                        <input matInput type="number" [(ngModel)]="symbolOpacity" (ngModelChange)="updateLayerSymbol()"
+                          min="0" max="1" step="0.1">
+                      </mat-form-field>
+                    </div>
+                  </div>
+                </ng-template>
+              </mat-tab>
+              }
+            </mat-tab-group>
+          </div>
+          } @else {
+          <div class="flex h-full w-full flex-auto flex-col items-center justify-center p-4 bg-white dark:bg-gray-800">
+            <mat-icon class="text-6xl text-gray-400" svgIcon="layers"></mat-icon>
+            <h2 class="mt-4 text-center text-xl font-medium text-gray-700 dark:text-gray-300">Select a Layer</h2>
+            <p class="mt-2 text-center text-sm text-gray-500 dark:text-gray-400">Choose a layer from the list to view
+              and
+              edit its properties</p>
+          </div>
+          }
+        </div>
+      </div>
     </div>
+  
 </div>

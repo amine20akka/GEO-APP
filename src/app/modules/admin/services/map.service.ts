@@ -21,6 +21,7 @@ import { MatSnackBar } from '@angular/material/snack-bar';
   providedIn: 'root'
 })
 export class MapService {
+
   private mapSubject: BehaviorSubject<Map | null> = new BehaviorSubject<Map | null>(null);
   public map$: Observable<Map | null> = this.mapSubject.asObservable();
   isGeolocationActive = false;
@@ -30,6 +31,11 @@ export class MapService {
 
   constructor(private snackBar: MatSnackBar) { }
 
+  /**
+   * Initializes the OpenLayers map and sets it to the provided target.
+   * @param target - The target element ID where the map will be rendered.
+   * @returns The initialized map instance.
+   */
   initializeMap(target: string): Map {
     const initialCenter = [1138871.0121687565, 4415980.133146803];
     const initialZoom = 14;
@@ -47,15 +53,15 @@ export class MapService {
       layers: [
         new TileLayer({
           source: new OSM({
-            attributions: []
+            attributions: [] // Disabling default attributions
           }),
-          properties: { background: true }
+          properties: { background: true } // Setting the layer as background
         })
       ],
       view: new View({
         center: initialCenter,
         zoom: initialZoom,
-        rotation: 0,
+        rotation: 0
       }),
       controls: defaultControls({
         zoom: true,
@@ -122,15 +128,27 @@ export class MapService {
     }
   }
 
+  /**
+   * Retrieves the current map instance.
+   * @returns The current map instance or null if not initialized.
+   */
   getMap(): Map | null {
     return this.mapSubject.getValue();
   }
 
+  /**
+   * Updates the current map instance and notifies subscribers.
+   * @param map - The new map instance.
+   */
   updateMap(map: Map): void {
     this.mapSubject.next(map);
   }
 
-
+   /**
+   * Handles the background layer change by removing existing background layers
+   * and adding a new one based on the selected value.
+   * @param selectedValue - The value representing the desired background layer.
+   */
   onBackgroundChange(selectedValue: string): void {
     const map = this.getMap();
     if (!map) {
@@ -145,7 +163,8 @@ export class MapService {
       }
     });
 
-    // Create and add new background layer
+
+    // Create the new background layer based on the selected value
     let backgroundLayer: TileLayer<OSM | XYZ>;
     switch (selectedValue) {
       case 'OSM':
@@ -180,7 +199,7 @@ export class MapService {
         break;
       default:
         console.warn('No matching background layer found');
-        return;
+        return; // Exit if no valid selection
     }
 
     backgroundLayer.setZIndex(-1);
@@ -390,6 +409,5 @@ export class MapService {
       }
     });
   }
-
 
 }

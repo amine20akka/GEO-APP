@@ -25,6 +25,11 @@
                     <mat-icon>arrow_forward</mat-icon>
                 </button>
             </div>
+          
+            <!-- Printing button  -->
+            <button mat-icon-button (click)="imprimerCarte()" [matTooltip]="'Imprimer la carte'">
+                <mat-icon>print</mat-icon>
+            </button>
 
             <!-- Toggle button for measurement panel -->
             <button mat-icon-button (click)="toggleMeasurementPanel()" matTooltip="Mesures">
@@ -86,3 +91,26 @@
 
 <!-- Quick chat -->
 <quick-chat #quickChat="quickChat"></quick-chat>
+
+
+<ng-template #printDialog>
+    <h2 mat-dialog-title class="text-xl font-bold mb-4 text-primary">Options d'impression</h2>
+    <mat-dialog-content>
+        <p class="mb-4">Choisissez une option d'impression :</p>
+        <div class="flex flex-col space-y-3">
+            <button mat-stroked-button (click)="closeDialog('current')" class="flex items-center justify-start p-3 hover:bg-gray-100">
+                <mat-icon class="mr-3">crop_free</mat-icon>
+                <span>Vue actuelle</span>
+                <!-- <span class="text-sm text-gray-500 ml-auto">Imprimer la vue affichée</span> -->
+            </button>
+            <button mat-stroked-button (click)="closeDialog('extended')" class="flex items-center justify-start p-3 hover:bg-gray-100">
+                <mat-icon class="mr-3">zoom_out_map</mat-icon>
+                <span>Vue étendue</span>
+                <!-- <span class="text-sm text-gray-500 ml-auto">Imprimer toutes les couches</span> -->
+            </button>
+        </div>
+    </mat-dialog-content>
+    <mat-dialog-actions align="end" class="mt-4">
+        <button mat-button (click)="closeDialog()">Annuler</button>
+    </mat-dialog-actions>
+</ng-template>

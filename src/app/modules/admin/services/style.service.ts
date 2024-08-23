@@ -1,4 +1,6 @@
 import { Injectable } from '@angular/core';
+import { CustomLayer } from 'app/layout/common/quick-chat/quick-chat.types';
+import VectorLayer from 'ol/layer/Vector';
 import { Style, Fill, Stroke } from 'ol/style';
 import CircleStyle from 'ol/style/Circle';
 import ImageStyle from 'ol/style/Image';
@@ -157,6 +159,7 @@ export class StyleService {
   async getStyleForLayer(layerDetails: any): Promise<Style> {
     try {
       const sldXml = await this.fetchSLDFromGeoServer(layerDetails);
+      console.log('stylesld' , this.extractStyleFromSLD(sldXml))
       return this.extractStyleFromSLD(sldXml);
     } catch (error) {
       console.error('Error getting style for layer:', error);
@@ -165,7 +168,7 @@ export class StyleService {
   }
 
   createVectorLayerStyle(layerDetails: any): Style {
-    // Example: Generate a unique color based on the layer name
+    // Example: Generate a unique color based on the layer name bordure epaisseur bordure
     const color = this.stringToColor(layerDetails.name);
 
     return new Style({
@@ -258,4 +261,52 @@ export class StyleService {
       });
     }
   }
+  // In style.service.ts
+
+// Add these methods
+updateLayerStrokeColor(layer: CustomLayer, color: string): void {
+  if (layer.style instanceof Style) {
+      const currentStyle = layer.style;
+      const currentStroke = currentStyle.getStroke();
+      const newStroke = new Stroke({
+          color: color,
+          width: currentStroke ? currentStroke.getWidth() : 1
+      });
+
+      const newStyle = this.createNewStyle(currentStyle, newStroke);
+      this.applyNewStyle(layer, newStyle);
+  }
+}
+
+updateLayerStrokeWidth(layer: CustomLayer, width: number): void {
+  if (layer.style instanceof Style) {
+      const currentStyle = layer.style;
+      const currentStroke = currentStyle.getStroke();
+      const newStroke = new Stroke({
+          color: currentStroke ? currentStroke.getColor() : '#000000',
+          width: width
+      });
+
+      const newStyle = this.createNewStyle(currentStyle, newStroke);
+      this.applyNewStyle(layer, newStyle);
+  }
+}
+
+private createNewStyle(currentStyle: Style, newStroke: Stroke): Style {
+  return new Style({
+      fill: currentStyle.getFill(),
+      stroke: newStroke,
+      image: currentStyle.getImage(),
+      text: currentStyle.getText(),
+      zIndex: currentStyle.getZIndex()
+  });
+}
+
+private applyNewStyle(layer: CustomLayer, newStyle: Style): void {
+  layer.style = newStyle;
+  if (layer.layer instanceof VectorLayer) {
+      layer.layer.setStyle(() => newStyle);
+  }
+  this.saveStyle(layer.name, newStyle);
+}
 }

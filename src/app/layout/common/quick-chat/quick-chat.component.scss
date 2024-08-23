@@ -1,75 +1,93 @@
-quick-chat {
-    z-index: 399;
-
-    > div {
-        overflow: hidden;
-    }
-
-    &.quick-chat-opened {
-        > div {
-            overflow: visible;
-        }
-    }
-
-    &:not(.quick-chat-opened) {
-        > div {
-            overflow: visible;
-            animation: addOverflowHidden 1ms linear 400ms;
-            animation-fill-mode: forwards;
-        }
-    }
+.quick-chat-container {
+  position: fixed;
+  bottom: 0;
+  top: 0;
+  right: 0;
+  width: 112px; // 28rem in Tailwind (lg:w-28)
+  z-index: 399;
+  transition: all 0.3s ease-in-out;
+  display: flex;
+  flex-direction: column;
+  background-color: #fff;
 }
-.map-container {
-    width: 100%;
-    height: 100vh;
-    position: relative;
-  }
-  
-  #map {
-    width: 100%;
-    height: 100%;
-  }
-  
-/* Adjustments depending on the selected layout */
+
+.quick-chat-container.opened {
+  width: 470px;
+  right: 0;
+}
+
 .quick-chat-header {
-    height: 64px;
-
-    enterprise-layout &,
-    modern-layout & {
-        height: 80px !important;
-    }
+  height: 64px;
+  flex-shrink: 0;
+  width: 100%;
 }
 
-/* Overlay */
-.quick-chat-overlay {
-    position: fixed;
-    top: 0;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    z-index: 299;
-    opacity: 1;
-    background-color: transparent;
+.quick-chat-content {
+  display: flex;
+  flex-grow: 1;
+  overflow: hidden;
+  width: 100%;
 }
 
-@keyframes addOverflowHidden {
-    0% {
-        overflow: visible;
-    }
-    99% {
-        overflow: visible;
-    }
-    100% {
-        overflow: hidden;
-    }
+.layer-list-container {
+  width: auto;
+  transition: width 0.3s ease-in-out;
+  overflow-y: auto;
+  flex-shrink: 0;
 }
-.color-picker-container {
-    display: flex;
-    justify-content: center;
-    margin-top: 1rem;
-  }
-  
-  app-color-pie-chart {
-    width: 200px;
-    height: 200px;
-  }
+
+
+
+.layers-wrapper {
+  width: 100%;
+}
+
+.layer-item {
+  width: 100%;
+  transition: all 0.3s ease-in-out;
+}
+
+.layer-name {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  width: 100%;
+  height: 2rem;
+  transition: all 0.3s ease-in-out;
+  overflow: hidden;
+  white-space: nowrap;
+  padding: 0 0.5rem;
+}
+
+.layer-management {
+  display: none;
+  width: 0;
+  flex-shrink: 0;
+  overflow: hidden;
+  transition: all 0.3s ease-in-out;
+}
+
+.quick-chat-container.opened .layer-management {
+  display: block;
+  width: 360px;
+  overflow-y: auto;
+}
+
+.legend-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.legend-container img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+}
+
+.legend-container mat-icon {
+  font-size: 20px;
+  width: 20px;
+  height: 20px;
+}
