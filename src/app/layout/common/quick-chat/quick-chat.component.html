@@ -55,9 +55,9 @@
             <!-- Couches GeoServer -->
             <div class="mb-2">
               <h3 class="text-xs mb-2 py-1 text-center font-semibold tracking-wider text-gray-500 border-b border-gray-200">
-                Couches publiées
+                Couches GeoServer
               </h3>
-              @if (arLayersLoaded()) {
+              @if ((layers | filterLayers:'WFS':'WMS').length > 0) {
                 @for (layer of layers | filterLayers:'WFS':'WMS'; track trackByFn($index, layer); let i = $index) {
                   <div class="relative layer-item" [attr.data-index]="i">
                     <div
@@ -66,7 +66,7 @@
                         'bg-primary-50 dark:bg-gray-600': selectedLayer && selectedLayer === layer,
                         'opacity-50': draggedIndex === i
                       }"
-                      (click)="handleLayerClick(layer)"
+                      (click)="onLayerVisibilityChange(layer)"
                       draggable="true"
                       (dragstart)="onDragStart($event, i)"
                       (dragend)="onDragEnd($event)"
@@ -85,7 +85,14 @@
                   </div>
                 }
               } @else {
-                <p class="text-center text-sm text-gray-500">Loading layers...</p>
+                <div class="flex flex-col justify-center items-center pb-3">
+                  <p class="text-xs justify-center items-center text-center py-2">Importer d'ici:</p>
+                  <button class="flex rounded-full bg-blue-100" mat-icon-button (click)="toggleImportPanel()"
+                    [matTooltip]="_quickChatService.isImportPanelVisible ? 'Annuler' : 'Importer une couche à partir d\'un serveur'">
+                    <mat-icon
+                      [svgIcon]="_quickChatService.isImportPanelVisible ? 'heroicons_outline:x-mark' : 'heroicons_outline:cloud-arrow-down'"></mat-icon>
+                  </button>
+                </div>
               }
             </div>
             <!-- Couches importées -->
@@ -93,7 +100,7 @@
               <h3 class="text-xs mb-2 py-1 text-center font-semibold tracking-wider text-gray-500 border-b border-t border-gray-200">
                 Couches importées
               </h3>
-              @if (arLayersLoaded() && (layers | filterLayers:'IMPORT').length > 0) {
+              @if ((layers | filterLayers:'IMPORT').length > 0) {
                 @for (layer of layers | filterLayers:'IMPORT'; track trackByFn($index, layer); let i = $index) {
                   <div class="relative layer-item" [attr.data-index]="i">
                     <div class="flex justify-center cursor-pointer items-center px-3 py-2 transition-all duration-200 ease-in-out"
@@ -102,7 +109,7 @@
                            'bg-primary-50 dark:bg-gray-600': selectedLayer && selectedLayer === layer,
                            'opacity-50': draggedIndex === i
                          }"
-                         (click)="handleLayerClick(layer)"
+                         (click)="onLayerVisibilityChange(layer)"
                          draggable="true"
                          (dragstart)="onDragStart($event, i)" 
                          (dragend)="onDragEnd($event)"
@@ -123,13 +130,13 @@
                   </div>
                 }
               } @else {
-                <div class="flex flex-col justify-center items-center pb-3">
-                  <p class="text-xs justify-center items-center text-center py-2">Importer ici :</p>
-                  <button class="flex rounded-full bg-blue-100" mat-icon-button (click)="openFileInput()"
-                          [matTooltip]="'Importer une couche'">
-                    <mat-icon [svgIcon]="'heroicons_outline:arrow-down-tray'"></mat-icon>
-                  </button>
-                </div>
+              <div class="flex flex-col justify-center items-center pb-3">
+                <p class="text-xs justify-center items-center text-center py-2">Importer d'ici:</p>
+                <button class="flex rounded-full bg-blue-100" mat-icon-button (click)="openFileInput()"
+                  [matTooltip]="'Importer une couche locale'">
+                  <mat-icon [svgIcon]="'heroicons_outline:arrow-down-tray'"></mat-icon>
+                </button>
+              </div>
               }
             </div>
           </div>
@@ -146,8 +153,7 @@
                 </mat-card-title>
               </mat-card-header>
               <mat-card-content class="pt-4">
-                <mat-expansion-panel #expansionPanel class="shadow-none border" (opened)="panelOpened()"
-                  (closed)="panelClosed()">
+                <mat-expansion-panel #expansionPanel class="shadow-none border">
                   <mat-expansion-panel-header class="bg-gray-50 dark:bg-gray-700">
                     <mat-panel-title class="text-sm font-medium">
                       Details
@@ -166,6 +172,11 @@
                       <span matListItemTitle class="text-sm font-medium text-gray-600 dark:text-gray-300">Source</span>
                       <span matListItemLine class="text-sm text-gray-800 dark:text-gray-100">{{ MMapselectedLayer.source
                         }}</span>
+                    </mat-list-item>
+                    <mat-list-item>
+                      <button mat-icon-button (click)="openAttributeTable(MMapselectedLayer.id)" [matTooltip]="'Ouvrir la table attributaire'">
+                        <mat-icon [svgIcon]="'heroicons_outline:table-cells'"></mat-icon>
+                      </button>
                     </mat-list-item>
                   </mat-list>
                 </mat-expansion-panel>

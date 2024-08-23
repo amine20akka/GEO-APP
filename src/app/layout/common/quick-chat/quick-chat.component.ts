@@ -1,15 +1,13 @@
 import { ScrollStrategy, ScrollStrategyOptions } from '@angular/cdk/overlay';
 import { TextFieldModule } from '@angular/cdk/text-field';
-import { DatePipe, NgClass, NgTemplateOutlet, PercentPipe } from '@angular/common';
+import { DatePipe, NgClass, NgTemplateOutlet, PercentPipe, CommonModule } from '@angular/common';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
-import { MatIconRegistry } from '@angular/material/icon';
 import {
     Component,
     ElementRef,
     HostBinding,
     OnDestroy,
     OnInit,
-    Input,
     Renderer2,
     ViewEncapsulation,
     ViewChild,
@@ -30,36 +28,25 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { FuseScrollbarDirective } from '@fuse/directives/scrollbar';
 import { LayersService } from 'app/modules/admin/services/layers.service';
-import { Subject, Subscription, fromEvent } from 'rxjs';
-import { MatExpansionModule, MatExpansionPanel } from '@angular/material/expansion';
+import { Subject, Subscription } from 'rxjs';
+import { MatExpansionModule } from '@angular/material/expansion';
 import { ColorPieChartComponentComponent } from '../color-pie-chart-component/color-pie-chart-component.component';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { CustomLayer } from './quick-chat.types';
 import { FilterLayersPipe } from 'app/modules/admin/filter-layers-pipe/filter-layers.pipe';
 import { ImportService } from '../import/import.service';
 import { AttributeTableService } from './attribute-table/attribute-table.service';
-import Feature from 'ol/Feature';
 import { MatDialogModule } from '@angular/material/dialog';
-import { MapService } from 'app/modules/admin/services/map.service';
 import { ServerImportComponent } from '../server-import/server-import.component';
 import { QuickChatService } from './quick-chat.service';
 import { StyleService } from 'app/modules/admin/services/style.service';
 import { MapService } from 'app/modules/admin/services/map.service';
 import { Circle, Fill, Icon, Stroke, Style } from 'ol/style';
 import VectorLayer from 'ol/layer/Vector';
-import { GeometryCollection, LineString, MultiLineString, MultiPoint, MultiPolygon, Point, Polygon } from 'ol/geom';
-import { Feature } from 'ol';
 import { MatSelectModule } from '@angular/material/select';
-import { CommonModule } from '@angular/common';
 import Map from 'ol/Map';
-import { debounceTime, distinctUntilChanged, takeUntil } from 'rxjs/operators';
-import VectorSource from 'ol/source/Vector';
-import { Extent } from 'ol/extent';
 import { MiniMapComponent } from 'app/modules/admin/dashboards/mini-map/mini-map.component';
 import { Router, RouterModule } from '@angular/router';
-import { Layer } from 'ol/layer';
-import { ImageWMS, Source, TileWMS } from 'ol/source';
-import CircleStyle from 'ol/style/Circle';
 
 @Component({
     selector: 'quick-chat',
@@ -119,7 +106,6 @@ export class QuickChatComponent implements OnInit, OnDestroy, AfterViewInit {
     activeTab: 'color' | 'opacity' = 'color';
     isDragging: boolean = false;
     isOverDelete: boolean = false;
-    panelOpen = false;
 
     availableSymbols = [
         { value: 'circle', label: 'Circle', icon: 'circle' },
@@ -135,7 +121,7 @@ export class QuickChatComponent implements OnInit, OnDestroy, AfterViewInit {
         { value: 'polygon', label: 'Polygon', icon: 'change_history' },
         { value: 'multipolygon', label: 'MultiPolygon', icon: 'dashboard' },
         { value: 'collection', label: 'GeometryCollection', icon: 'layers' },
-      ];
+    ];
 
     selectedSymbol: string = 'circle';
     symbolSize: number = 24;
@@ -150,7 +136,6 @@ export class QuickChatComponent implements OnInit, OnDestroy, AfterViewInit {
     handleKeyEvent(event: KeyboardEvent) {
         if (event.key === 'Shift') {
             this.isShiftPressed = event.type === 'keydown';
-            console.log('Shift key ' + (this.isShiftPressed ? 'pressed' : 'released'));
             this._changeDetectorRef.detectChanges();
         }
     }
@@ -173,7 +158,6 @@ export class QuickChatComponent implements OnInit, OnDestroy, AfterViewInit {
         private sanitizer: DomSanitizer,
     ) {
         this._scrollStrategy = this._scrollStrategyOptions.block();
-        console.log('QuickChatComponent constructor called');
     }
 
     @HostBinding('class') get classList(): any {
@@ -181,28 +165,17 @@ export class QuickChatComponent implements OnInit, OnDestroy, AfterViewInit {
             'quick-chat-opened': this.opened,
         };
     }
-    //verif loading of all layers
-    arLayersLoaded(): boolean {
-        return this.layers && this.layers.length > 0;
-    }
 
     ngOnInit(): void {
-    this.layersSubscription = this._layersService.layers$.subscribe(layers => {
-      this.layers = layers;
-      this._changeDetectorRef.detectChanges();
-    });
-  }
-
-    ngAfterViewInit() {
-        console.log('ngAfterViewInit called');
-        setTimeout(() => {
-            console.log('mapContainer:', this.mapContainer);
-
+        this.layersSubscription = this._layersService.layers$.subscribe(layers => {
+            this.layers = layers;
+            this._changeDetectorRef.detectChanges();
         });
     }
 
+    ngAfterViewInit() { }
+
     ngOnDestroy(): void {
-        console.log('ngOnDestroy called');
         if (this.layersSubscription) {
             this.layersSubscription.unsubscribe();
         }
@@ -210,16 +183,16 @@ export class QuickChatComponent implements OnInit, OnDestroy, AfterViewInit {
             this.miniMap.setTarget(undefined);
         }
     }
-      // Nouvelle méthode pour obtenir la légende OpenLayers
-      getOpenLayersLegend(layer: CustomLayer): SafeHtml {
-            
+    // Nouvelle méthode pour obtenir la légende OpenLayers
+    getOpenLayersLegend(layer: CustomLayer): SafeHtml {
+
         return this._layersService.getOpenLayersLegend(layer);
     }
-    
+
     //   generateSvgLegend(geometryType: string, fillColor: string, strokeColor: string, strokeWidth: number): string {
     //     const size = 20;
     //     let svg = '';
-    
+
     //     switch (geometryType) {
     //       case 'Point':
     //         svg = `<svg width="${size}" height="${size}" xmlns="http://www.w3.org/2000/svg">
@@ -243,14 +216,14 @@ export class QuickChatComponent implements OnInit, OnDestroy, AfterViewInit {
     //                  <text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" font-size="14">${geometryType[0]}</text>
     //                </svg>`;
     //     }
-    
+
     //     return svg;
     //   }
-    
+
     //   generateSvgLegend(geometryType: string, color: string): string {
     //     const size = 20;
     //     let svg = '';
-    
+
     //     switch (geometryType) {
     //       case 'Point':
     //         svg = `<svg width="${size}" height="${size}" xmlns="http://www.w3.org/2000/svg">
@@ -272,51 +245,24 @@ export class QuickChatComponent implements OnInit, OnDestroy, AfterViewInit {
     //                  <text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" font-size="14">${geometryType[0]}</text>
     //                </svg>`;
     //     }
-    
+
     //     return svg;
     //   }
-    
-
-//manage clicks for opened and closed menu
-    handleLayerClick(layer: CustomLayer, event: MouseEvent) {
-        if (this.opened && !this.isShiftPressed) {
-            this.selectLayer(layer);
-        } else if (this.opened && this.isShiftPressed ) {
-            this.toggleLayerVisibility(layer);
-
-
-
-        }
-        else{
-            this.toggleLayerVisibility(layer);
-        }
-    }
-
-   
-
-    toggleLayerVisibility(layer: CustomLayer): void {
-
-        console.log('Toggling layer visibility:', layer);
-        this.onLayerVisibilityChange(layer.id);
-    }
 
     selectLayer(layer: CustomLayer): void {
-            {
-        console.log('Selecting layer:', layer.name);
-        this.MMapselectedLayer = layer;
-        this.selectedLayer = layer; 
-        this._changeDetectorRef.detectChanges();
-    }
+        {
+            this.MMapselectedLayer = layer;
+            this.selectedLayer = layer;
+            this._changeDetectorRef.detectChanges();
+        }
     }
 
-    onLayerVisibilityChange(layerId: string): void {
-        console.log('Toggling layer visibility:', layerId);
-        this._layersService.onLayerVisibilityChange(layerId);
+    onLayerVisibilityChange(customLayer: CustomLayer): void {
+        this._layersService.onLayerVisibilityChange(customLayer);
+        this.selectLayer(customLayer);
     }
-    
-    
 
-    //DRAG AND DROP METHODS
+    // DRAG AND DROP METHODS
     onDragStart(event: DragEvent, index: number) {
         event.dataTransfer.setData('text/plain', index.toString());
         this.draggedOverIndex = null;
@@ -339,20 +285,6 @@ export class QuickChatComponent implements OnInit, OnDestroy, AfterViewInit {
         this.draggedOverIndex = null;
     }
 
-    deleteLayer(index: number) {
-        const layerToDelete = this.layers[index];
-        // this._mapService.getMap().subscribe(map => map.removeLayer(layerToDelete.layer));
-        this._mapService.getMap().removeLayer(layerToDelete.layer);
-
-        this.layers = [...this.layers.slice(0, index), ...this.layers.slice(index + 1)];
-
-        const newOrder = this.layers.map((layer, index) => ({
-            name: layer.name,
-            zIndex: this.layers.length - index - 1
-        }));
-        this._layersService.updateLayerOrder(newOrder);
-    }
-
     onDrop(event: DragEvent, dropIndex: number) {
         event.preventDefault();
 
@@ -371,6 +303,22 @@ export class QuickChatComponent implements OnInit, OnDestroy, AfterViewInit {
         this.draggedOverIndex = null;
         this.isDragging = false;
     }
+
+
+    deleteLayer(index: number) {
+        const layerToDelete = this.layers[index];
+        // this._mapService.getMap().subscribe(map => map.removeLayer(layerToDelete.layer));
+        this._mapService.getMap().removeLayer(layerToDelete.layer);
+
+        this.layers = [...this.layers.slice(0, index), ...this.layers.slice(index + 1)];
+        
+        const newOrder = this.layers.map((layer, index) => ({
+            name: layer.name,
+            zIndex: this.layers.length - index - 1
+        }));
+        this._layersService.updateLayerOrder(newOrder);
+    }
+
 
     onDropDelete(event: DragEvent) {
         event.preventDefault();
@@ -398,8 +346,8 @@ export class QuickChatComponent implements OnInit, OnDestroy, AfterViewInit {
 
 
 
-    //STYLE MANAGEMENT METHODS
-    //COLOR METHODS
+    // STYLE MANAGEMENT METHODS
+    // COLOR METHODS
     getLayerColor(): string {
         if (!this.MMapselectedLayer || !(this.MMapselectedLayer.style instanceof Style)) {
             return '#000000';
@@ -549,25 +497,25 @@ export class QuickChatComponent implements OnInit, OnDestroy, AfterViewInit {
         //     }
         // }
         // else{
-        if (!this.preview){
+        if (!this.preview) {
 
-        // Apply the same style to the selectedLayer (principal map)
-        if (this.selectedLayer && this.selectedLayer.layer instanceof VectorLayer) {
-          this.selectedLayer.style = newStyle;
-          this.selectedLayer.layer.setStyle(() => newStyle);
-          this.selectedLayer.layer.changed();
-    
-          // Create a new reference to trigger ngOnChanges in MiniMapComponent
-          this.MMapselectedLayer = { ...this.MMapselectedLayer };
+            // Apply the same style to the selectedLayer (principal map)
+            if (this.selectedLayer && this.selectedLayer.layer instanceof VectorLayer) {
+                this.selectedLayer.style = newStyle;
+                this.selectedLayer.layer.setStyle(() => newStyle);
+                this.selectedLayer.layer.changed();
+
+                // Create a new reference to trigger ngOnChanges in MiniMapComponent
+                this.MMapselectedLayer = { ...this.MMapselectedLayer };
+            }
         }
-    }
-    
+
         // Render the main map
         this._mapService.getMap().render();
-    
+
         // Optionally, save the style to local storage or your backend
         // this._styleService.saveStyle(this.MMapselectedLayer.name, newStyle);
-      }
+    }
 
     updateLayerStrokeColor(color: string): void {
         if (!this.MMapselectedLayer || !(this.MMapselectedLayer.style instanceof Style)) {
@@ -786,21 +734,18 @@ export class QuickChatComponent implements OnInit, OnDestroy, AfterViewInit {
     getGeometryIcon(geometryType: string): string {
         const symbol = this.HavailableSymbols.find(s => s.label.toLowerCase() === geometryType.toLowerCase());
         return symbol ? symbol.icon : 'help_outline';
-      }
+    }
     getSelectedSymbolIcon(): string {
         const symbol = this.availableSymbols.find(s => s.value === this.selectedSymbol);
-        console.log('Selected Symbol Icon:', symbol?.icon);
         return symbol ? symbol.icon : '';
     }
 
     getSelectedSymbolLabel(): string {
         const symbol = this.availableSymbols.find(s => s.value === this.selectedSymbol);
-        console.log('Selected Symbol Label:', symbol?.label);
         return symbol ? symbol.label : '';
     }
 
     createPointSymbolStyle(): Style {
-        console.log('[createPointSymbolStyle] Generating symbol style...');
 
         const selectedSymbolInfo = this.availableSymbols.find(s => s.value === this.selectedSymbol);
 
@@ -817,8 +762,6 @@ export class QuickChatComponent implements OnInit, OnDestroy, AfterViewInit {
         </svg>
     `;
 
-        console.log('[createPointSymbolStyle] Generated SVG:', svg);
-
         const image = new Icon({
             src: 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg),
             scale: 1, // We're setting the size in the SVG itself
@@ -826,8 +769,6 @@ export class QuickChatComponent implements OnInit, OnDestroy, AfterViewInit {
             anchorXUnits: 'fraction',
             anchorYUnits: 'fraction'
         });
-
-        console.log('[createPointSymbolStyle] Created Icon style:', image);
 
         return new Style({ image: image });
     }
@@ -858,7 +799,7 @@ export class QuickChatComponent implements OnInit, OnDestroy, AfterViewInit {
                 return '';
         }
     }
-    
+
     // private applyNewStyle(newStyle: Style): void {
     //     if (this.MMapselectedLayer && this.MMapselectedLayer.layer instanceof VectorLayer) {
     //         this.MMapselectedLayer.style = newStyle;
@@ -871,7 +812,7 @@ export class QuickChatComponent implements OnInit, OnDestroy, AfterViewInit {
     // }
 
     //htmldisplay
-   
+
     // getGeometryIcon(geometryType: string): string {
     //     const iconMap: { [key: string]: string } = {
     //       'Point': 'geo-point',
@@ -882,7 +823,7 @@ export class QuickChatComponent implements OnInit, OnDestroy, AfterViewInit {
     //       'MultiPolygon': 'geo-multipolygon',
     //       'GeometryCollection': 'geo-collection'
     //     };
-    
+
     //     return iconMap[geometryType] || 'help_outline';
     //   }
     //display geometry with lisible format
@@ -903,7 +844,7 @@ export class QuickChatComponent implements OnInit, OnDestroy, AfterViewInit {
     toggleImportPanel(): void {
         this._quickChatService.isImportPanelVisible = !this._quickChatService.isImportPanelVisible;
     }
-  
+
     private capitalize(str: string): string {
         return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
     }
@@ -916,7 +857,7 @@ export class QuickChatComponent implements OnInit, OnDestroy, AfterViewInit {
         const layer = this._layersService.getLayerById(layerId);
         this._attributeTableService.openAttributeTable(layer);
     }
-    
+
     open(): void {
         if (!this.opened) {
             this._toggleOpened(true);
@@ -980,44 +921,44 @@ export class QuickChatComponent implements OnInit, OnDestroy, AfterViewInit {
     // toggleExpandedView(event: Event): void {
     //     event.stopPropagation();
     //     this.isExpandedView = !this.isExpandedView;
-        
+
     //     this._changeDetectorRef.markForCheck();
     //   }
 
     toggleExpandedView(): void {
         this.isExpandedView = !this.isExpandedView;
-      }
+    }
 
-      expanded = false;
+    expanded = false;
 
-      toggleExpanded() {
+    toggleExpanded() {
         if (!this.opened) {
-          this.expanded = !this.expanded;
+            this.expanded = !this.expanded;
         }
-      }
-/////////////////////tools
-preview = false; // Initially false
-savepressed = false;
+    }
+    /////////////////////tools
+    preview = false; // Initially false
+    savepressed = false;
 
-togglePreviewMode() {
-  this.preview = !this.preview;
-  console.log(`Preview Mode is now ${this.preview ? 'activated' : 'deactivated'}`);
+    togglePreviewMode() {
+        this.preview = !this.preview;
+        console.log(`Preview Mode is now ${this.preview ? 'activated' : 'deactivated'}`);
+    }
+
+    goBackward() {
+        console.log('Navigating backward');
+    }
+
+    saveMapState() {
+        console.log('Map state saved');
+    }
+
+    goForward() {
+        console.log('Navigating forward');
+    }
+
+    navigateToMiniMap() {
+        console.log('Navigating to Mini Map');
+    }
 }
 
-goBackward() {
-  console.log('Navigating backward');
-}
-
-saveMapState() {
-  console.log('Map state saved');
-}
-
-goForward() {
-  console.log('Navigating forward');
-}
-
-navigateToMiniMap() {
-  console.log('Navigating to Mini Map');
-}
-}
-    

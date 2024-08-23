@@ -37,8 +37,8 @@ export class MapService {
    * @returns The initialized map instance.
    */
   initializeMap(target: string): Map {
-    const initialCenter = [1138871.0121687565, 4415980.133146803];
-    const initialZoom = 14;
+    const initialCenter = [0, 0];
+    const initialZoom = 0;
 
     const rotateButton = new Control({
       element: this.createRotateButton(),

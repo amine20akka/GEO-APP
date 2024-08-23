@@ -159,7 +159,6 @@ export class StyleService {
   async getStyleForLayer(layerDetails: any): Promise<Style> {
     try {
       const sldXml = await this.fetchSLDFromGeoServer(layerDetails);
-      console.log('stylesld' , this.extractStyleFromSLD(sldXml))
       return this.extractStyleFromSLD(sldXml);
     } catch (error) {
       console.error('Error getting style for layer:', error);

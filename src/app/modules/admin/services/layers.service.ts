@@ -136,8 +136,7 @@ export class LayersService {
     }
   }
   
-  onLayerVisibilityChange(layerId: string): void {
-    const customLayer = this.getLayerById(layerId);
+  onLayerVisibilityChange(customLayer: CustomLayer): void {
     if (customLayer) {
       customLayer.layer.setVisible(!customLayer.layer.getVisible());
     }
@@ -198,7 +197,6 @@ export class LayersService {
         let vectorStyle = this.styleService.loadStyleFromLocalStorage(layerDetails.name);
         if (!vectorStyle) {
           vectorStyle = await this.styleService.getStyleForLayer(layerDetails);
-          console.log('fetchedstyleLocStor', vectorStyle);
           this.styleService.saveStyle(layerDetails.name, vectorStyle);
         }
         if (!vectorStyle) {
@@ -275,54 +273,40 @@ export class LayersService {
     this.layersSubject.next(layers);
   }
 
-  // Update the order of layers and adjust their Z-Index
   updateLayerOrder(newOrder: { name: string }[]): void {
     const map = this._mapService.getMap();
     if (!map) return;
 
-    const layerGroup = map.getLayers();
-    const layers = layerGroup.getArray();
+    const layers = this.layersSubject.getValue(); // Get the current layers from BehaviorSubject
 
     // Update zIndex for each layer based on its new position
     newOrder.forEach((item, index) => {
-      const layer = layers.find(l => l.get('name') === item.name) as Layer<Source>;
-      if (layer) {
+      const layerObj = layers.find(l => l.name === item.name);
+      if (layerObj) {
         const newZIndex = 1000 - index;
-        layer.setZIndex(newZIndex);
+        layerObj.layer.setZIndex(newZIndex);
         console.log(`Updated Z-Index to ${newZIndex} for layer ${item.name}`);
       }
     });
 
-    // Sort the layer group based on the new zIndex values
+    // Sort the OpenLayers layers based on the new zIndex values
+    const layerGroup = map.getLayers();
     layerGroup.getArray().sort((a, b) => (b.getZIndex() || 0) - (a.getZIndex() || 0));
 
-    map.render();
+    map.render(); // Re-render the map to apply changes
 
     // Update the BehaviorSubject with the new layer order
-    const updatedLayers: CustomLayer[] = newOrder.map(item => {
-      const layer = this.getLayerByName(item.name);
-      if (layer) {
-        return {
-          ...layer,
-          layer: layer.layer as Layer<Source>,
-        };
-      }
-      return null;
-    }).filter((layer): layer is CustomLayer => layer !== null);
+    const updatedLayers = layers.sort((a, b) => (b.layer.getZIndex() || 0) - (a.layer.getZIndex() || 0));
 
-    this.layersSubject.next(updatedLayers);
-
-    console.log('Updated layer order:', updatedLayers.map(layer => ({
-      name: layer.name,
-      zIndex: layer.layer.getZIndex(),
-    })));
+    this.layersSubject.next([...updatedLayers]); // Emit the updated layers
   }
-  //legende
+
+
+  // legende
   getOpenLayersLegend(layer: CustomLayer): SafeHtml {
             
     if (layer.source === 'WFS') {
       const geometryType = this.getGeometryType(layer);
-      console.log('Geometry type:', geometryType);
 
       let fillColor = 'rgba(0,0,0,0)';
       let strokeColor = '#000000';
@@ -333,16 +317,13 @@ export class LayersService {
         const stroke = layer.style.getStroke();
         const image = layer.style.getImage();
 
-        console.log('Style components:', { fill, stroke, image });
 
         if (fill) {
           fillColor = fill.getColor() as string;
-          console.log('Fill color:', fillColor);
         }
         if (stroke) {
           strokeColor = stroke.getColor() as string;
           strokeWidth = stroke.getWidth() || 1;
-          console.log('Stroke color:', strokeColor, 'width:', strokeWidth);
         }
         if (image instanceof CircleStyle) {
           const imageFill = image.getFill();
@@ -354,20 +335,14 @@ export class LayersService {
             strokeColor = imageStroke.getColor() as string;
             strokeWidth = imageStroke.getWidth() || 1;
           }
-          console.log('Circle style:', { fillColor, strokeColor, strokeWidth });
         }
       }
 
       // Générer un SVG simple pour la légende
       const svgLegend = this.generateSvgLegend(geometryType, fillColor, strokeColor, strokeWidth);
-      console.log('Generated SVG legend:', svgLegend);
 
       return this.sanitizer.bypassSecurityTrustHtml(svgLegend);
-    } else {
-      console.log('Layer is not WFS');
     }
-
-    console.log('Returning default icon for layer');
     return this.sanitizer.bypassSecurityTrustHtml(`<mat-icon [fontIcon]="getGeometryIcon(getGeometryType(layer))"></mat-icon>`);
   }
 
