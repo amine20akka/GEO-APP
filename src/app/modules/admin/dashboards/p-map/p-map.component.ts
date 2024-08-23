@@ -16,6 +16,7 @@ import { CustomLayer } from 'app/layout/common/quick-chat/quick-chat.types';
   imports: [MatButtonModule, MatIconModule],
 })
 export class PMapComponent implements OnInit, OnDestroy {
+  
   private subscriptions: Subscription = new Subscription();
   layers: CustomLayer[] = [];
   map: Map | null = null;
@@ -64,4 +65,5 @@ export class PMapComponent implements OnInit, OnDestroy {
       });
     }
   }
+  
 }
