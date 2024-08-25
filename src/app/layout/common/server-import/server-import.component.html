@@ -33,11 +33,16 @@
         </div>
         }
 
-        @if (!isLoading && (availableLayers$ | async) && fetchedLayersExist) {
+        @if (!isLoading && availableLayers.length > 0 && fetchedLayersExist) {
         <div class="layers-list">
             <mat-label>Couches Disponibles</mat-label>
             <mat-selection-list formControlName="selectedLayers">
-                @for (layerObj of availableLayers$ | async; track trackByFn($index, layerObj);) {
+
+                <!-- Select All Checkbox -->
+                <mat-checkbox (change)="toggleSelectAll($event.checked)">Tout sélectionner</mat-checkbox>
+                <mat-divider></mat-divider>
+                
+                @for (layerObj of availableLayers; track trackByFn($index, layerObj);) {
                 <mat-list-option [ngClass]="{
                     'bg-stone-200': layerObj.exists,
                     'bg-red-100' : layerObj.sameName,

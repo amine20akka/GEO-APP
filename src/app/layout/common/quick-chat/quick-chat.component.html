@@ -54,7 +54,7 @@
           <div class="layers-wrapper">
             <!-- Couches GeoServer -->
             <div class="mb-2">
-              <h3 class="text-xs mb-2 py-1 text-center font-semibold tracking-wider text-gray-500 border-b border-gray-200">
+              <h3 class="text-xs mb-2 py-1 pl-1 text-center font-semibold tracking-wider text-gray-500 border-b border-gray-200">
                 Couches GeoServer
               </h3>
               @if ((layers | filterLayers:'WFS':'WMS').length > 0) {
@@ -98,7 +98,7 @@
             <!-- Couches importées -->
             <div class="mt-4">
               <h3 class="text-xs mb-2 py-1 text-center font-semibold tracking-wider text-gray-500 border-b border-t border-gray-200">
-                Couches importées
+                Couches Locales
               </h3>
               @if ((layers | filterLayers:'IMPORT').length > 0) {
                 @for (layer of layers | filterLayers:'IMPORT'; track trackByFn($index, layer); let i = $index) {

@@ -56,7 +56,7 @@ export class ViewHistoryService {
     }
     return (
       JSON.stringify(view1.getCenter()) === JSON.stringify(view2.getCenter()) &&
-      view1.getZoom() === view2.getZoom() &&
+      view1.getResolution() === view2.getResolution() &&
       view1.getRotation() === view2.getRotation()
     );
   }

@@ -10,7 +10,7 @@ import { pointerMove } from 'ol/events/condition';
 import { XYZ } from 'ol/source';
 import { BehaviorSubject, Observable } from 'rxjs';
 import { CustomLayer } from 'app/layout/common/quick-chat/quick-chat.types';
-import { ProjectionLike } from 'ol/proj';
+import { ProjectionLike, useGeographic } from 'ol/proj';
 import { Circle, Point } from 'ol/geom';
 import VectorSource from 'ol/source/Vector';
 import VectorLayer from 'ol/layer/Vector';
@@ -38,7 +38,7 @@ export class MapService {
    */
   initializeMap(target: string): Map {
     const initialCenter = [0, 0];
-    const initialZoom = 0;
+    const initialZoom = 3;
 
     const rotateButton = new Control({
       element: this.createRotateButton(),

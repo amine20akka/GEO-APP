@@ -10,9 +10,9 @@ import { MatOptionModule } from '@angular/material/core';
 import { MatListOption, MatSelectionList } from '@angular/material/list';
 import { CustomLayer } from '../quick-chat/quick-chat.types';
 import { MatSnackBar } from '@angular/material/snack-bar';
-import { finalize, map, Observable } from 'rxjs';
+import { async, finalize, map, Observable } from 'rxjs';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
-import { MatProgressBarModule } from '@angular/material/progress-bar';
+import { MatCheckboxModule } from '@angular/material/checkbox';
 
 @Component({
   selector: 'app-server-import',
@@ -29,15 +29,15 @@ import { MatProgressBarModule } from '@angular/material/progress-bar';
     MatButtonModule,
     MatInputModule,
     MatIconModule,
-    MatProgressBarModule,
     MatProgressSpinnerModule,
+    MatCheckboxModule,
   ],
   templateUrl: './server-import.component.html',
   styleUrl: './server-import.component.scss'
 })
 export class ServerImportComponent {
   importForm: FormGroup;
-  availableLayers$: Observable<{ layer: CustomLayer; exists: boolean; sameName: boolean }[]>;
+  availableLayers: { layer: CustomLayer; exists: boolean; sameName: boolean }[] = [];
   fetchedLayersExist: boolean = true;
   layersAreSelected: boolean = false;
   isLoading: boolean = false;
@@ -47,8 +47,6 @@ export class ServerImportComponent {
       workspaceName: ['', Validators.required],
       selectedLayers: [[]],
     });
-
-    layersService.layers$.subscribe(layers => console.log(layers));
   }
 
   trackByFn(index: number, item: any): any {
@@ -62,21 +60,21 @@ export class ServerImportComponent {
     this.importForm.get('selectedLayers').setValidators([Validators.required]);
     const workspaceName = this.importForm.get('workspaceName').value;
     if (workspaceName) {
-      this.availableLayers$ = this.layersService.fetchLayersFromWorkspace(workspaceName).pipe(
+      this.layersService.fetchLayersFromWorkspace(workspaceName).pipe(
         map(layers =>
           layers.map(layer => ({
             layer,
-            exists: this.layersService.exists(layer.features), 
+            exists: this.layersService.exists(layer.features),
             sameName: this.layersService.nameExists(layer.name),
           }))
         ),
         finalize(() => {
           this.isLoading = false;
         })
-      );
-      this.availableLayers$.subscribe(result => {
-          if (result.length !==0) {
+      ).subscribe(result => {
+        if (result.length > 0) {
           this.fetchedLayersExist = true;
+          this.availableLayers = result;
         } else {
           this.fetchedLayersExist = false;
         }
@@ -93,6 +91,15 @@ export class ServerImportComponent {
     });
   }
 
+  toggleSelectAll(selectAll: boolean): void {
+    const layersControl = this.importForm.get('selectedLayers');
+    if (selectAll) {
+      layersControl.setValue(this.availableLayers.map(layerObj => layerObj.layer));
+    } else {
+      layersControl.setValue([]);
+    }
+  }
+
   importLayers(): void {
     if (this.importForm.valid) {
       const importedLayers = this.importForm.get('selectedLayers').value;
@@ -100,7 +107,7 @@ export class ServerImportComponent {
         if (!this.layersService.exists(importedLayer.features) && !this.layersService.nameExists(importedLayer.name)) {
           this.layersService.addLayer(importedLayer);
           this.layersService.addFeatures(importedLayer);
-        } 
+        }
       });
     }
     this.loadLayers();
@@ -109,3 +116,4 @@ export class ServerImportComponent {
     });
   }
 }
+
