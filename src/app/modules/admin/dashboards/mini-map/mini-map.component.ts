@@ -34,12 +34,9 @@ export class MiniMapComponent implements OnInit, OnChanges, AfterViewInit, OnDes
   constructor(private mapService: MapService, private _router: Router) {
   }
 
-  ngOnInit() {
-    console.log('MiniMapComponent: ngOnInit', this.selectedLayer);
-  }
+  ngOnInit() { }
 
   ngAfterViewInit() {
-    console.log('MiniMapComponent: ngAfterViewInit');
     this.initMap();
   }
 
@@ -54,7 +51,6 @@ export class MiniMapComponent implements OnInit, OnChanges, AfterViewInit, OnDes
   }
 
   ngOnDestroy() {
-    console.log('MiniMapComponent: ngOnDestroy');
     if (this.map) {
       this.map.setTarget(undefined);
       this.map = null;
@@ -62,9 +58,7 @@ export class MiniMapComponent implements OnInit, OnChanges, AfterViewInit, OnDes
   }
 
   private initMap() {
-    console.log('MiniMapComponent: initMap start');
     if (this.mapElement && this.mapElement.nativeElement) {
-      console.log('Map element found:', this.mapElement.nativeElement);
       this.map = new Map({
         target: this.mapElement.nativeElement,
         layers: [
@@ -86,7 +80,6 @@ export class MiniMapComponent implements OnInit, OnChanges, AfterViewInit, OnDes
           })
         ])
       });
-      console.log('Map initialized:', this.map);
       if (this.selectedLayer) {
         this.updateMap();
       }
@@ -107,7 +100,6 @@ export class MiniMapComponent implements OnInit, OnChanges, AfterViewInit, OnDes
     }
   }
   private updateMap() {
-    console.log('MiniMapComponent: updateMap', this.selectedLayer);
     if (this.map && this.selectedLayer && this.selectedLayer.layer) {
       // Clear existing layers except the base layer
       const layersToRemove = this.map.getLayers().getArray().slice(1);
@@ -131,7 +123,6 @@ export class MiniMapComponent implements OnInit, OnChanges, AfterViewInit, OnDes
 
       // Add the cloned layer to the mini-map
       this.map.addLayer(miniMapLayer);
-      console.log('Cloned layer added to mini-map:', miniMapLayer);
 
       // Determine the extent based on the layer type and available data
       let extent: Extent | undefined;
@@ -142,31 +133,23 @@ export class MiniMapComponent implements OnInit, OnChanges, AfterViewInit, OnDes
         extent = this.getExtentFromRasterLayer(miniMapLayer);
       }
 
-      console.log('Calculated extent:', extent);
-
       if (extent && !extent.every(v => v === Infinity || v === -Infinity)) {
         this.map.getView().fit(extent, {
           padding: [50, 50, 50, 50],
           maxZoom: 19,
           duration: 1000  // Add smooth animation
         });
-        console.log('View fit to extent');
       } else {
-        console.log('No valid extent found, using default view');
         this.map.getView().setCenter([0, 0]);
         this.map.getView().setZoom(2);
       }
 
       this.map.updateSize();
-      console.log('Map size updated');
 
       // Force a redraw after a short delay
       setTimeout(() => {
         this.map.renderSync();
-        console.log('Forced map redraw');
       }, 500);
-    } else {
-      console.log('Map or selected layer is null, cannot update');
     }
   }
 
@@ -177,9 +160,7 @@ export class MiniMapComponent implements OnInit, OnChanges, AfterViewInit, OnDes
       // Force the map to update its size
       setTimeout(() => {
         this.map.updateSize();
-        console.log('Map size updated');
         this.map.renderSync();
-        console.log('Forced map redraw');
       }, 100);
     }
   }
@@ -204,13 +185,11 @@ export class MiniMapComponent implements OnInit, OnChanges, AfterViewInit, OnDes
   }
 
   navigateToPMap(): void {
-    console.log('Navigating to PMap');
     this._router.navigate(['/dashboards/pmap']);
   }
 
   toggleMapSize(): void {
     this.isExpanded = !this.isExpanded;
-    console.log('Map size toggled, isExpanded:', this.isExpanded);
     setTimeout(() => {
       this.updateMapSize();
       if (this.selectedLayer) {

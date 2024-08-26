@@ -20,7 +20,6 @@ import { SearchComponent } from 'app/layout/common/search/search.component';
 import { ShortcutsComponent } from 'app/layout/common/shortcuts/shortcuts.component';
 import { UserComponent } from 'app/layout/common/user/user.component';
 import { firstValueFrom, Subject, takeUntil } from 'rxjs';
-import { ImportService } from 'app/layout/common/import/import.service';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { CircleComponent } from 'app/layout/common/circle/circle.component';
 import { MatMenuModule } from '@angular/material/menu';
@@ -40,6 +39,7 @@ import OlMap from 'ol/Map';
 import { Extent } from 'ol/extent';
 import { MatDialog, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
 import { CommonModule } from '@angular/common';
+import { ImportService } from 'app/layout/common/local-import/import.service';
 
 @Component({
     selector: 'classy-layout',

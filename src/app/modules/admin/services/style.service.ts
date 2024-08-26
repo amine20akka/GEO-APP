@@ -166,9 +166,9 @@ export class StyleService {
     }
   }
 
-  createVectorLayerStyle(layerDetails: any): Style {
+  createVectorLayerStyle(layerName: any): Style {
     // Example: Generate a unique color based on the layer name bordure epaisseur bordure
-    const color = this.stringToColor(layerDetails.name);
+    const color = this.stringToColor(layerName);
 
     return new Style({
       image: new CircleStyle({

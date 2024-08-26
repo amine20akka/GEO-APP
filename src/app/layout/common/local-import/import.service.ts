@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { MatDialog } from '@angular/material/dialog';
 import { MatSnackBar } from '@angular/material/snack-bar';
-import { ImportDialogComponent } from '../local-import/import-dialog/import-dialog.component';
+import { ImportDialogComponent } from './import-dialog/import-dialog.component';
 import Feature from 'ol/Feature';
 import VectorSource from 'ol/source/Vector';
 import VectorLayer from 'ol/layer/Vector';
@@ -9,6 +9,7 @@ import { MapService } from 'app/modules/admin/services/map.service';
 import { CustomLayer } from '../quick-chat/quick-chat.types';
 import { LayersService } from 'app/modules/admin/services/layers.service';
 import { v4 as uuidv4 } from 'uuid';
+import { StyleService } from 'app/modules/admin/services/style.service';
 
 @Injectable({
   providedIn: 'root'
@@ -18,6 +19,7 @@ export class ImportService {
     private dialog: MatDialog,
     private mapService: MapService,
     private layersService: LayersService,
+    private styleService: StyleService,
     private snackBar: MatSnackBar
   ) { }
 
@@ -43,11 +45,14 @@ export class ImportService {
       layer: vectorLayer,
       source: 'IMPORT',
       features: importedData.features,
+      style: this.styleService.createVectorLayerStyle(importedData.name),
+      inStyle: this.styleService.createVectorLayerStyle(importedData.name),
     };
 
     if (!this.layersService.exists(customLayer.features) && !this.layersService.nameExists(customLayer.name)) {
       this.layersService.addLayer(customLayer);
       this.layersService.addFeatures(customLayer);
+      (customLayer.layer as VectorLayer).setStyle(customLayer.style);
       customLayer.layer.setVisible(true);
       this.mapService.getMap().getView().fit(vectorSource.getExtent());
       this.snackBar.open(`La couche "${importedData.name}" a été ajouté avec succès`, 'Fermer', {

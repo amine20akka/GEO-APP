@@ -189,9 +189,17 @@ export class LayersService {
       let layer: Layer | null = null;
       let source: 'WFS' | 'WMS';
       let features: Feature[] = [];
-
       let style: Style | undefined;
       let inStyle: Style;
+      let title: string = '';
+
+      // Fetch the feature type details to get the title
+      const featureTypeResponse = await axios.get(layerDetails.resource.href, {
+        auth: { username: 'admin', password: 'geoserver' },
+      });
+      if (featureTypeResponse.data.featureType.title) {
+        title = featureTypeResponse.data.featureType.title;
+      }
 
       if (layerDetails.type === 'VECTOR') {
         let vectorStyle = this.styleService.loadStyleFromLocalStorage(layerDetails.name);
@@ -210,7 +218,7 @@ export class LayersService {
         layer = new VectorLayer({
           source: vectorSource,
           zIndex: 1,
-          style: vectorStyle ,
+          style: vectorStyle,
         });
 
         style = vectorStyle; // Store the style
@@ -224,12 +232,11 @@ export class LayersService {
         features = new GeoJSON().readFeatures(featureResponse.data);
         features.forEach(feature => {
           feature.set('_layerName_$', layerDetails.name);
-          feature.set('_type_$', 'Feature')
+          feature.set('_type_$', 'Feature');
         });
 
         vectorSource.addFeatures(features);
-      } 
-      else if (layerDetails.type === 'RASTER') {
+      } else if (layerDetails.type === 'RASTER') {
         layer = new TileLayer({
           source: new TileWMS({
             url: `${this.geoServerUrl}/wms`,
@@ -243,12 +250,24 @@ export class LayersService {
       if (layer) {
         layer.setZIndex(this.getNextZIndex());
       }
-      return { id: uuidv4(), name: layerDetails.name, type: layerDetails.type, layer, source, features, style, inStyle };
+
+      return {
+        id: uuidv4(),
+        name: layerDetails.name,
+        type: layerDetails.type,
+        layer,
+        source,
+        features,
+        style,
+        inStyle,
+        title,
+      };
     } catch (error) {
       console.error('Error fetching layer details:', error);
       return null;
     }
   }
+
 
   // Add and update a new layer to the state
   addLayer(customLayer: CustomLayer): void {
@@ -301,11 +320,22 @@ export class LayersService {
     this.layersSubject.next([...updatedLayers]); // Emit the updated layers
   }
 
+  removeLayer(layerId: string) {
+    const currentLayers = this.layersSubject.getValue();
+    const updatedLayers = currentLayers.filter(layer => layer.id !== layerId);
+    this.layersSubject.next(updatedLayers);
+
+    // Mettez à jour l'ordre des couches si nécessaire
+    this.updateLayerOrder(updatedLayers.map((layer, index) => ({
+      name: layer.name,
+      zIndex: updatedLayers.length - index - 1
+    })));
+  }
 
   // legende
   getOpenLayersLegend(layer: CustomLayer): SafeHtml {
             
-    if (layer.source === 'WFS') {
+    // if (layer.source === 'WFS') {
       const geometryType = this.getGeometryType(layer);
 
       let fillColor = 'rgba(0,0,0,0)';
@@ -342,8 +372,8 @@ export class LayersService {
       const svgLegend = this.generateSvgLegend(geometryType, fillColor, strokeColor, strokeWidth);
 
       return this.sanitizer.bypassSecurityTrustHtml(svgLegend);
-    }
-    return this.sanitizer.bypassSecurityTrustHtml(`<mat-icon [fontIcon]="getGeometryIcon(getGeometryType(layer))"></mat-icon>`);
+    // }
+    // return this.sanitizer.bypassSecurityTrustHtml(`<mat-icon [fontIcon]="getGeometryIcon(getGeometryType(layer))"></mat-icon>`);
   }
 
   generateSvgLegend(geometryType: string, fillColor: string, strokeColor: string, strokeWidth: number): string {

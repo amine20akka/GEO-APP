@@ -32,7 +32,7 @@ import { Shortcut } from 'app/layout/common/shortcuts/shortcuts.types';
 import { MapService } from 'app/modules/admin/services/map.service';
 import { Subject, takeUntil } from 'rxjs';
 import { MatDialogModule } from '@angular/material/dialog';
-import { ImportService } from '../import/import.service';
+import { ImportService } from '../local-import/import.service';
 
 @Component({
     selector: 'shortcuts',

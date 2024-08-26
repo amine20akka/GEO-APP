@@ -76,10 +76,10 @@
                     >
                       <div class="flex items-center">
                         <div class="legend-container w-6 h-6 flex-shrink-0 mr-2" [innerHTML]="getOpenLayersLegend(layer)"></div>
-                        <span class="">{{ formatLayerName(layer.name) }}</span>
+                        <span class="layer-name" [matTooltip]="layer.title">
+                          {{ formatLayerName(layer.name) }}
+                        </span>
                         <!-- <span class="short-name">{{ formatLayerName(layer.name).substring(0, 1) }}</span> -->
-
-
                       </div>
                     </div>
                   </div>
@@ -103,28 +103,19 @@
               @if ((layers | filterLayers:'IMPORT').length > 0) {
                 @for (layer of layers | filterLayers:'IMPORT'; track trackByFn($index, layer); let i = $index) {
                   <div class="relative layer-item" [attr.data-index]="i">
-                    <div class="flex justify-center cursor-pointer items-center px-3 py-2 transition-all duration-200 ease-in-out"
-                         [ngClass]="{
-                           'hover:bg-gray-100 dark:hover:bg-gray-700': !selectedLayer || selectedLayer !== layer,
-                           'bg-primary-50 dark:bg-gray-600': selectedLayer && selectedLayer === layer,
-                           'opacity-50': draggedIndex === i
-                         }"
-                         (click)="onLayerVisibilityChange(layer)"
-                         draggable="true"
-                         (dragstart)="onDragStart($event, i)" 
-                         (dragend)="onDragEnd($event)"
-                         (dragover)="onDragOver($event, i)" 
-                         (dragleave)="onDragLeave()" 
-                         (drop)="onDrop($event, i)">
-                      <div class="layer-name flex items-center justify-center text-s uppercase text-gray-600 dark:bg-gray-700 dark:text-gray-200 shadow-sm">
-                        <mat-icon [fontIcon]="getGeometryIcon(getGeometryType(layer))" 
-                                  class="short-name" 
-                                  [matTooltip]="!opened ? getGeometryType(layer) : ''"
-                                  matTooltipPosition="above"
-                                  [matTooltipDisabled]="opened">
-                        </mat-icon>
-                        <span class="short-name">{{ formatLayerName(layer.name).substring(0, 1) }}</span>
-                        <span class="full-name">{{ formatLayerName(layer.name) }}</span>
+                    <div class="flex justify-between cursor-pointer items-center px-3 py-2 transition-all duration-200 ease-in-out"
+                      [ngClass]="{
+                                          'bg-primary-50 dark:bg-gray-600': selectedLayer && selectedLayer === layer,
+                                          'opacity-50': draggedIndex === i
+                                        }" (click)="onLayerVisibilityChange(layer)" draggable="true" (dragstart)="onDragStart($event, i)"
+                      (dragend)="onDragEnd($event)" (dragover)="onDragOver($event, i)" (dragleave)="onDragLeave()"
+                      (drop)="onDrop($event, i)">
+                      <div class="flex items-center flex-grow min-w-0">
+                        <div class="legend-container w-6 h-6 flex-shrink-0 mr-2" [innerHTML]="getOpenLayersLegend(layer)"></div>
+                        <span class="layer-name" [matTooltip]="formatLayerName(layer.name)">
+                          {{ formatLayerName(layer.name) }}
+                        </span>
+                        <!-- <span class="short-name">{{ formatLayerName(layer.name).substring(0, 1) }}</span> -->
                       </div>
                     </div>
                   </div>
@@ -145,41 +136,37 @@
         <!-- layer management -->
         <div class="layer-management flex-none overflow-hidden border-l bg-card">
           @if (MMapselectedLayer) {
-          <div #scrollContainer class="overflow-y-auto h-full bg-white dark:bg-gray-800">
+          <div #scrollContainer class="overflow-y-auto h-full w-full bg-white dark:bg-gray-800">
             <mat-card class="m-2 shadow-sm">
               <mat-card-header class="pb-2 border-b">
-                <mat-card-title class="text-lg font-semibold text-gray-800 dark:text-white">
-                  {{ MMapselectedLayer.name }}: {{ getGeometryType(MMapselectedLayer) }}
+                <mat-card-title class="text-lg font-semibold text-gray-800 dark:text-white pl-2">
+                  {{ MMapselectedLayer.title }}
                 </mat-card-title>
               </mat-card-header>
-              <mat-card-content class="pt-4">
-                <mat-expansion-panel #expansionPanel class="shadow-none border">
-                  <mat-expansion-panel-header class="bg-gray-50 dark:bg-gray-700">
-                    <mat-panel-title class="text-sm font-medium">
-                      Details
-                    </mat-panel-title>
-                    <mat-panel-description>
-                      <mat-icon class="text-gray-500">expand_more</mat-icon>
-                    </mat-panel-description>
-                  </mat-expansion-panel-header>
-                  <mat-list class="py-0">
-                    <mat-list-item>
-                      <span matListItemTitle class="text-sm font-medium text-gray-600 dark:text-gray-300">Type</span>
-                      <span matListItemLine class="text-sm text-gray-800 dark:text-gray-100">{{ MMapselectedLayer.type
-                        }}</span>
-                    </mat-list-item>
-                    <mat-list-item>
-                      <span matListItemTitle class="text-sm font-medium text-gray-600 dark:text-gray-300">Source</span>
-                      <span matListItemLine class="text-sm text-gray-800 dark:text-gray-100">{{ MMapselectedLayer.source
-                        }}</span>
-                    </mat-list-item>
-                    <mat-list-item>
-                      <button mat-icon-button (click)="openAttributeTable(MMapselectedLayer.id)" [matTooltip]="'Ouvrir la table attributaire'">
-                        <mat-icon [svgIcon]="'heroicons_outline:table-cells'"></mat-icon>
-                      </button>
-                    </mat-list-item>
-                  </mat-list>
-                </mat-expansion-panel>
+              <mat-card-content class="pt-2">
+                <div class="flex items-center w-auto space-x-4 p-2 bg-gray-100 dark:bg-gray-700 rounded-md">
+                  <!-- Visibility Icon -->
+                  <button mat-icon-button [matTooltip]="'Visibilté'" (click)="onLayerVisibilityChange(selectedLayer)">
+                    <mat-icon [svgIcon]="selectedLayer.layer.getVisible() ? 'heroicons_outline:eye' : 'heroicons_outline:eye-slash'">
+                    </mat-icon>
+                  </button>
+                
+                  <!-- Zoom to layer -->
+                  <button mat-icon-button [matTooltip]="'Zoom sur la couche'" (click)="ZoomToLayer(selectedLayer)">
+                    <mat-icon>my_location</mat-icon>
+                  </button>
+                
+                  <!-- Attribute Table Icon -->
+                  <button mat-icon-button (click)="openAttributeTable(MMapselectedLayer.id)"
+                    [matTooltip]="'Ouvrir la table attributaire'">
+                    <mat-icon [svgIcon]="'heroicons_outline:table-cells'"></mat-icon>
+                  </button>
+                
+                  <!-- Delete Layer -->
+                  <button mat-icon-button (click)="deleteLayer(selectedLayer.id)" [matTooltip]="'Supprimer la couche'">
+                    <mat-icon [svgIcon]="'heroicons_outline:trash'"></mat-icon>
+                  </button>
+                </div>
 
                 <div #mapContainer class="mt-4 transition-all duration-300 ease-in-out"
                   [ngClass]="{'sticky top-0 z-10': isMapSticky}">
@@ -223,15 +210,15 @@
 
             <mat-tab-group mat-stretch-tabs="false" mat-align-tabs="start"
               class="mx-2 mt-4 bg-white dark:bg-gray-800 rounded shadow-sm" animationDuration="0ms">
-              <mat-tab label="Color">
+              <mat-tab label="Couleur">
                 <ng-template matTabContent>
                   <div class="p-4 space-y-4">
-                    <div>
-                      <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Fill Color</label>
+                    <div class="items-center">
+                      <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Couleur de la couche</label>
                       <div class="flex items-center space-x-2">
                         <input type="color" [ngModel]="getLayerColor()" (ngModelChange)="updateLayerColor($event)"
-                          class="w-10 h-10 rounded">
-                        <mat-form-field class="flex-grow">
+                          class="w-12 h-10 rounded">
+                        <mat-form-field class="flex-center pt-4 w-56 h-auto">
                           <input matInput [ngModel]="getLayerColor()" (ngModelChange)="updateLayerColor($event)">
                         </mat-form-field>
                         <button mat-icon-button color="primary" (click)="resetToInitialColor()"
@@ -244,12 +231,11 @@
                     @if (getGeometryType(MMapselectedLayer) !== 'LineString' && getGeometryType(MMapselectedLayer) !==
                     'MultiLineString') {
                     <div>
-                      <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Stroke
-                        Color</label>
+                      <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Couleur de bordure</label>
                       <div class="flex items-center space-x-2">
                         <input type="color" [ngModel]="getLayerStrokeColor()"
-                          (ngModelChange)="updateLayerStrokeColor($event)" class="w-10 h-10 rounded">
-                        <mat-form-field class="flex-grow">
+                          (ngModelChange)="updateLayerStrokeColor($event)" class="w-12 h-10 rounded">
+                        <mat-form-field class="flex-center pt-4 w-56 h-auto">
                           <input matInput [ngModel]="getLayerStrokeColor()"
                             (ngModelChange)="updateLayerStrokeColor($event)">
                         </mat-form-field>
@@ -261,15 +247,14 @@
                     </div>
                     }
 
-                    <div>
-                      <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Stroke
-                        Width</label>
-                      <mat-slider class="w-full" color="primary" [min]="0" [max]="10" [step]="0.1" [discrete]="true">
+                    <div class="flex flex-col">
+                      <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Épaisseur de la bordure</label>
+                      <mat-slider class="w-auto" color="primary" [min]="0" [max]="10" [step]="0.1" [discrete]="true">
                         <input matSliderThumb [value]="getLayerStrokeWidth()"
                           (valueChange)="updateLayerStrokeWidth($event)">
                       </mat-slider>
 
-                      <mat-form-field class="w-full mt-2">
+                      <mat-form-field class="w-auto mt-2">
                         <input matInput type="number" [ngModel]="getLayerStrokeWidth()"
                           (ngModelChange)="updateLayerStrokeWidth($event)" min="0" max="10" step="0.1">
                       </mat-form-field>
@@ -278,10 +263,10 @@
                 </ng-template>
               </mat-tab>
 
-              <mat-tab label="Opacity">
+              <mat-tab label="Opacité">
                 <ng-template matTabContent>
                   <div class="p-4 space-y-4">
-                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Layer Opacity</label>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Opacité de la couche</label>
                     <mat-slider class="w-full" color="primary" [min]="0" [max]="1" [step]="0.01" [discrete]="true">
                       <input matSliderThumb [value]="selectedLayer?.layer?.getOpacity() ?? 1"
                         (valueChange)="updateLayerOpacity($event)">
@@ -301,7 +286,7 @@
                 <ng-template matTabContent>
                   <div class="p-4 space-y-4">
                     <mat-form-field class="w-full">
-                      <mat-label>Select Symbol</mat-label>
+                      <mat-label>Choisir un Symbol</mat-label>
                       <mat-select [(value)]="selectedSymbol" (selectionChange)="updateLayerSymbol()">
                         <mat-select-trigger>
                           <mat-icon>{{getSelectedSymbolIcon()}}</mat-icon>
@@ -317,7 +302,7 @@
                     </mat-form-field>
 
                     <div>
-                      <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Symbol Size</label>
+                      <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Taille de Symbol</label>
                       <mat-slider class="w-full" [min]="1" [max]="100" [step]="1">
                         <input matSliderThumb [(ngModel)]="symbolSize" (ngModelChange)="updateLayerSymbol()">
                       </mat-slider>
@@ -328,8 +313,7 @@
                     </div>
 
                     <div>
-                      <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Symbol
-                        Color</label>
+                      <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Couleur du Symbol</label>
                       <div class="flex items-center space-x-2">
                         <input type="color" [(ngModel)]="symbolColor" (ngModelChange)="updateLayerSymbol()"
                           class="w-10 h-10 rounded">
@@ -359,10 +343,9 @@
           } @else {
           <div class="flex h-full w-full flex-auto flex-col items-center justify-center p-4 bg-white dark:bg-gray-800">
             <mat-icon class="text-6xl text-gray-400" svgIcon="layers"></mat-icon>
-            <h2 class="mt-4 text-center text-xl font-medium text-gray-700 dark:text-gray-300">Select a Layer</h2>
-            <p class="mt-2 text-center text-sm text-gray-500 dark:text-gray-400">Choose a layer from the list to view
-              and
-              edit its properties</p>
+            <h2 class="mt-4 text-center text-xl font-medium text-gray-700 dark:text-gray-300">Sélectionner une couche</h2>
+            <p class="mt-2 text-center text-sm text-gray-500 dark:text-gray-400">Choisir une couche dans la liste pour voir et modifier ses
+            propriétés</p>
           </div>
           }
         </div>

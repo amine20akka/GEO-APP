@@ -34,7 +34,6 @@ import { ColorPieChartComponentComponent } from '../color-pie-chart-component/co
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { CustomLayer } from './quick-chat.types';
 import { FilterLayersPipe } from 'app/modules/admin/filter-layers-pipe/filter-layers.pipe';
-import { ImportService } from '../import/import.service';
 import { AttributeTableService } from './attribute-table/attribute-table.service';
 import { MatDialogModule } from '@angular/material/dialog';
 import { ServerImportComponent } from '../server-import/server-import.component';
@@ -47,6 +46,8 @@ import { MatSelectModule } from '@angular/material/select';
 import Map from 'ol/Map';
 import { MiniMapComponent } from 'app/modules/admin/dashboards/mini-map/mini-map.component';
 import { Router, RouterModule } from '@angular/router';
+import { ImportService } from '../local-import/import.service';
+import VectorSource from 'ol/source/Vector';
 
 @Component({
     selector: 'quick-chat',
@@ -169,6 +170,7 @@ export class QuickChatComponent implements OnInit, OnDestroy, AfterViewInit {
     ngOnInit(): void {
         this.layersSubscription = this._layersService.layers$.subscribe(layers => {
             this.layers = layers;
+            console.log(layers);
             this._changeDetectorRef.detectChanges();
         });
     }
@@ -262,6 +264,14 @@ export class QuickChatComponent implements OnInit, OnDestroy, AfterViewInit {
         this.selectLayer(customLayer);
     }
 
+    ZoomToLayer(customLayer: CustomLayer): void {
+        const extent = (customLayer.layer.getSource() as VectorSource).getExtent();
+        this._mapService.getMap().getView().fit(extent, {
+            duration: 4000,
+            maxZoom: 15
+        });
+    }
+
     // DRAG AND DROP METHODS
     onDragStart(event: DragEvent, index: number) {
         event.dataTransfer.setData('text/plain', index.toString());
@@ -305,18 +315,22 @@ export class QuickChatComponent implements OnInit, OnDestroy, AfterViewInit {
     }
 
 
-    deleteLayer(index: number) {
-        const layerToDelete = this.layers[index];
-        // this._mapService.getMap().subscribe(map => map.removeLayer(layerToDelete.layer));
+    deleteLayer(layerId: string) {
+        // Trouvez la couche à supprimer
+        const layerToDelete = this.layers.find(layer => layer.id === layerId);
+
+        if (!layerToDelete) {
+            console.error(`Layer with id ${layerId} not found`);
+            return;
+        }
+
+        // Supprimez la couche de la carte
         this._mapService.getMap().removeLayer(layerToDelete.layer);
 
-        this.layers = [...this.layers.slice(0, index), ...this.layers.slice(index + 1)];
-        
-        const newOrder = this.layers.map((layer, index) => ({
-            name: layer.name,
-            zIndex: this.layers.length - index - 1
-        }));
-        this._layersService.updateLayerOrder(newOrder);
+        // Demandez au service de supprimer la couche
+        this._layersService.removeLayer(layerId);
+
+        // La mise à jour de this.layers se fera automatiquement via la souscription existante
     }
 
 
@@ -328,7 +342,7 @@ export class QuickChatComponent implements OnInit, OnDestroy, AfterViewInit {
         const isConfirmed = confirm(`Are you sure you want to delete the layer "${layerToDelete.name}"?`);
 
         if (isConfirmed) {
-            this.deleteLayer(dragIndex);
+            this.deleteLayer(this.selectedLayer.id);
         }
 
         this.isDragging = false;
@@ -405,84 +419,39 @@ export class QuickChatComponent implements OnInit, OnDestroy, AfterViewInit {
             this.updateLayerColor(initialColor);
         }
     }
-    //Saving color
-    // updateLayerColor(color: string): void {
-    //     if (!this.MMapselectedLayer || !(this.MMapselectedLayer.style instanceof Style)) {
-    //         console.error('Invalid layer or style');
-    //         return;
-    //     }
+    
+    private cloneStyle(style: Style): Style {
+        return new Style({
+            image: style.getImage() ? style.getImage().clone() : undefined,
+            fill: style.getFill() ? style.getFill() : undefined,
+            stroke: style.getStroke() ? style.getStroke() : undefined,
+        });
+    }
 
-    //     const currentStyle = this.MMapselectedLayer.style;
-    //     const geometryType = this.getGeometryType(this.MMapselectedLayer);
-    //     let newStyle: Style;
-
-    //     switch (geometryType) {
-    //         case 'Point':
-    //             const currentImage = currentStyle.getImage();
-    //             if (currentImage instanceof Circle) {
-    //                 newStyle = new Style({
-    //                     image: new Circle({
-    //                         radius: currentImage.getRadius(),
-    //                         fill: new Fill({ color }),
-    //                         stroke: currentImage.getStroke()
-    //                     })
-    //                 });
-    //             } else {
-    //                 newStyle = currentStyle;
-    //             }
-    //             break;
-    //         case 'LineString':
-    //         case 'MultiLineString':
-    //             newStyle = new Style({
-    //                 stroke: new Stroke({ color, width: currentStyle.getStroke()?.getWidth() || 1 })
-    //             });
-    //             break;
-    //         default:
-    //             newStyle = new Style({
-    //                 fill: new Fill({ color }),
-    //                 stroke: currentStyle.getStroke()
-    //             });
-    //     }
-
-    //     this.applyNewStyle(newStyle);
-    // }
     updateLayerColor(color: string): void {
         if (!this.MMapselectedLayer || !(this.MMapselectedLayer.style instanceof Style)) {
             console.error('Invalid layer or style');
             return;
         }
 
-        const currentStyle = this.MMapselectedLayer.style;
+        const currentStyle = this.selectedLayer.style;
+        const newStyle = this.cloneStyle(currentStyle);
         const geometryType = this.getGeometryType(this.MMapselectedLayer);
-        let newStyle: Style;
 
         switch (geometryType) {
-            case 'Point':
             case 'MultiPoint':
-                const currentImage = currentStyle.getImage();
-                if (currentImage instanceof Circle) {
-                    newStyle = new Style({
-                        image: new Circle({
-                            radius: currentImage.getRadius(),
-                            fill: new Fill({ color }),
-                            stroke: currentImage.getStroke()
-                        })
-                    });
-                } else {
-                    newStyle = currentStyle;
+            case 'Point':
+                const image = newStyle.getImage();
+                if (image instanceof Circle) {
+                    image.setFill(new Fill({ color }));
                 }
                 break;
             case 'LineString':
             case 'MultiLineString':
-                newStyle = new Style({
-                    stroke: new Stroke({ color, width: currentStyle.getStroke()?.getWidth() || 1 })
-                });
+                newStyle.getStroke().setColor(color);
                 break;
             default:
-                newStyle = new Style({
-                    fill: new Fill({ color }),
-                    stroke: currentStyle.getStroke()
-                });
+                newStyle.setFill(new Fill({ color }));
         }
 
         this.applyNewStyle(newStyle);
@@ -501,6 +470,9 @@ export class QuickChatComponent implements OnInit, OnDestroy, AfterViewInit {
 
             // Apply the same style to the selectedLayer (principal map)
             if (this.selectedLayer && this.selectedLayer.layer instanceof VectorLayer) {
+                this.MMapselectedLayer.style = newStyle;
+                (this.MMapselectedLayer.layer as VectorLayer).setStyle(() => newStyle);
+                this.MMapselectedLayer.layer.changed();
                 this.selectedLayer.style = newStyle;
                 this.selectedLayer.layer.setStyle(() => newStyle);
                 this.selectedLayer.layer.changed();
@@ -524,27 +496,24 @@ export class QuickChatComponent implements OnInit, OnDestroy, AfterViewInit {
         }
 
         const currentStyle = this.MMapselectedLayer.style;
+        const newStyle = this.cloneStyle(currentStyle);
         const geometryType = this.getGeometryType(this.MMapselectedLayer);
-        let newStyle: Style;
 
         if (geometryType === 'Point' || geometryType === 'MultiPoint') {
-            const currentImage = currentStyle.getImage();
-            if (currentImage instanceof Circle) {
-                newStyle = new Style({
-                    image: new Circle({
-                        radius: currentImage.getRadius(),
-                        fill: currentImage.getFill(),
-                        stroke: new Stroke({ color, width: this.getLayerStrokeWidth() })
-                    })
-                });
-            } else {
-                newStyle = currentStyle;
+            const image = newStyle.getImage();
+            if (image instanceof Circle) {
+                const currentStroke = image.getStroke();
+                image.setStroke(new Stroke({
+                    color: color,
+                    width: currentStroke ? currentStroke.getWidth() : this.getLayerStrokeWidth()
+                }));
             }
         } else {
-            newStyle = new Style({
-                fill: currentStyle.getFill(),
-                stroke: new Stroke({ color, width: this.getLayerStrokeWidth() })
-            });
+            const currentStroke = currentStyle.getStroke();
+            newStyle.setStroke(new Stroke({
+                color: color,
+                width: currentStroke ? currentStroke.getWidth() : this.getLayerStrokeWidth()
+            }));
         }
 
         this.applyNewStyle(newStyle);
@@ -557,33 +526,24 @@ export class QuickChatComponent implements OnInit, OnDestroy, AfterViewInit {
         }
 
         const currentStyle = this.MMapselectedLayer.style;
+        const newStyle = this.cloneStyle(currentStyle);
         const geometryType = this.getGeometryType(this.MMapselectedLayer);
-        let newStyle: Style;
 
         if (geometryType === 'Point' || geometryType === 'MultiPoint') {
-            const currentImage = currentStyle.getImage();
-            if (currentImage instanceof Circle) {
-                newStyle = new Style({
-                    image: new Circle({
-                        radius: currentImage.getRadius(),
-                        fill: currentImage.getFill(),
-                        stroke: new Stroke({
-                            color: currentImage.getStroke() ? currentImage.getStroke().getColor() : 'black',
-                            width: width
-                        })
-                    })
-                });
-            } else {
-                newStyle = currentStyle;
+            const image = newStyle.getImage();
+            if (image instanceof Circle) {
+                const currentStroke = image.getStroke();
+                image.setStroke(new Stroke({
+                    color: currentStroke ? currentStroke.getColor() : 'black',
+                    width: width
+                }));
             }
         } else {
-            newStyle = new Style({
-                fill: currentStyle.getFill(),
-                stroke: new Stroke({
-                    color: currentStyle.getStroke() ? currentStyle.getStroke().getColor() : 'black',
-                    width: width
-                })
-            });
+            const currentStroke = currentStyle.getStroke();
+            newStyle.setStroke(new Stroke({
+                color: currentStroke ? currentStroke.getColor() : 'black',
+                width: width
+            }));
         }
 
         this.applyNewStyle(newStyle);
@@ -592,7 +552,9 @@ export class QuickChatComponent implements OnInit, OnDestroy, AfterViewInit {
     updateLayerOpacity(opacity: number): void {
         if (this.MMapselectedLayer && this.MMapselectedLayer.layer) {
             this.MMapselectedLayer.layer.setOpacity(opacity);
+            this.selectedLayer.layer.setOpacity(opacity);
             this.MMapselectedLayer.layer.changed();
+            this.MMapselectedLayer = { ...this.MMapselectedLayer };
             this._mapService.getMap().render();
         }
     }

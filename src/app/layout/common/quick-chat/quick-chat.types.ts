@@ -51,6 +51,7 @@ export interface Contact {
 export interface CustomLayer {
     id: string;
     name: string;
+    title?: string;
     type: 'VECTOR' | 'RASTER';
     layer: Layer<Source>;
     source: 'WFS' | 'IMPORT' | 'WMS';
