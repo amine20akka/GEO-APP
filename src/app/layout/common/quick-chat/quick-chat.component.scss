@@ -3,7 +3,7 @@
   bottom: 0;
   top: 0;
   right: 0;
-  width: 112px; // 28rem in Tailwind (lg:w-28)
+  width: 145px; // 28rem in Tailwind (lg:w-28)
   z-index: 399;
   transition: all 0.3s ease-in-out;
   display: flex;
@@ -12,7 +12,7 @@
 }
 
 .quick-chat-container.opened {
-  width: 470px;
+  width: 500px;
   right: 0;
 }
 
