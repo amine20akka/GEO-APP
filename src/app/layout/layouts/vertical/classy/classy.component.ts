@@ -40,6 +40,7 @@ import { Extent } from 'ol/extent';
 import { MatDialog, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
 import { CommonModule } from '@angular/common';
 import { ImportService } from 'app/layout/common/local-import/import.service';
+import { DomSanitizer } from '@angular/platform-browser';
 
 @Component({
     selector: 'classy-layout',
@@ -96,7 +97,9 @@ export class ClassyLayoutComponent implements OnInit, OnDestroy {
         public _quickChatService: QuickChatService,
         public _viewHistoryService: ViewHistoryService,
         private _layersService: LayersService,
-        private dialog: MatDialog
+        private dialog: MatDialog,
+        private sanitizer: DomSanitizer
+
     ) {}
 
     get currentYear(): number {
@@ -189,32 +192,34 @@ export class ClassyLayoutComponent implements OnInit, OnDestroy {
         try {
             const result = await this.dialogRef.afterClosed().toPromise();
             console.log('Dialog closed with result:', result);
-
+    
             if (result === undefined) {
                 console.log('Print canceled');
                 return;
             }
-
+    
             console.log('Print option selected:', result);
-
-            // Proceed with printing based on the selected option
-            if (result === 'current') {
-                console.log('Printing current view');
-            } else if (result === 'extended') {
-                console.log('Printing extended view');
-            }
-
+    
             const pmap = this._mapService.getMap();
             console.log('Map obtained:', pmap);
-
-            const layers: CustomLayer[] = await firstValueFrom(this._layersService.layers$);
-            console.log('Layers obtained:', layers);
-
-            if (!pmap || !layers) {
-                console.error("La carte ou les couches ne sont pas disponibles.");
+    
+            if (!pmap) {
+                console.error("La carte n'est pas disponible.");
                 return;
             }
-
+    
+            // Wait for the map to be fully loaded
+            await new Promise<void>((resolve) => {
+                if (pmap.getLayers().getLength() > 0) {
+                    resolve();
+                } else {
+                    pmap.once('rendercomplete', () => resolve());
+                }
+            });
+    
+            const layers: CustomLayer[] = await firstValueFrom(this._layersService.layers$);
+            console.log('Layers obtained:', layers);
+    
             const fenetreImpression: Window | null = window.open('', '_blank', 'height=600,width=800');
             
             if (fenetreImpression) {
@@ -222,27 +227,54 @@ export class ClassyLayoutComponent implements OnInit, OnDestroy {
                 const originalCenter = pmap.getView().getCenter();
                 const originalZoom = pmap.getView().getZoom();
                 
+                const captureMap = async () => {
+                    return new Promise<string>((resolve) => {
+                        setTimeout(() => {
+                            const mapCanvas = pmap.getViewport().querySelector('canvas');
+                            if (mapCanvas) {
+                                resolve((mapCanvas as HTMLCanvasElement).toDataURL('image/png'));
+                            } else {
+                                console.error("Canvas element not found");
+                                resolve('');
+                            }
+                        }, 500); // Add a 500ms delay
+                    });
+                };
+    
                 if (result === 'current') {
                     console.log('Capturing current view');
-                    const mapCanvas = pmap.getViewport().querySelector('canvas');
-                    if (!mapCanvas) {
-                        console.error("L'élément canvas de la carte n'a pas été trouvé.");
-                        return;
-                    }
-                    mapImage = (mapCanvas as HTMLCanvasElement).toDataURL('image/png');
+                    mapImage = await captureMap();
                 } else {
                     console.log('Capturing extended view');
                     const extent = this.getLayersExtent(layers);
-                    pmap.getView().fit(extent, { padding: [50, 50, 50, 50] });
-                    await new Promise(resolve => setTimeout(resolve, 100));
-                    const mapCanvas = pmap.getViewport().querySelector('canvas');
-                    mapImage = (mapCanvas as HTMLCanvasElement).toDataURL('image/png');
-                    pmap.getView().setCenter(originalCenter);
-                    pmap.getView().setZoom(originalZoom);
+                    if (extent) {
+                        pmap.getView().fit(extent, { padding: [50, 50, 50, 50] });
+                        await new Promise(resolve => setTimeout(resolve, 500)); // Add delay after fitting
+                        mapImage = await captureMap();
+                        pmap.getView().setCenter(originalCenter);
+                        pmap.getView().setZoom(originalZoom);
+                    } else {
+                        console.error("No valid extent found for layers");
+                        mapImage = await captureMap(); // Fallback to current view
+                    }
                 }
-
+    
+                if (!mapImage) {
+                    console.error("Failed to capture map image");
+                    return;
+                }
+    
                 const date = new Date().toLocaleDateString();
-                fenetreImpression.document.write(`
+                const layersHtml = layers.filter(layer => layer.layer.getVisible()).map(layer => {
+                    const legendHtml = this._layersService.getOpenLayersLegend(layer);
+                    const legendElement = this.sanitizer.sanitize(1, legendHtml) || '';
+                    return `
+                        <div class="layer-item">
+                            <span class="layer-name">${layer.title}</span>
+                            <span class="layer-legend">${legendElement}</span>
+                        </div>
+                    `;
+                }).join('');                fenetreImpression.document.write(`
                     <!DOCTYPE html>
                     <html lang="fr">
                     <head>
@@ -296,8 +328,12 @@ export class ClassyLayoutComponent implements OnInit, OnDestroy {
                                 margin-bottom: 5px;
                                 padding: 5px 0;
                                 border-bottom: 1px solid #e9ecef;
+                                display: flex;
+                                align-items: center;
                             }
                             .layer-item:last-child { border-bottom: none; }
+                            .layer-name { flex: 1; }
+                            .layer-legend { margin-left: 10px; }
                             .footer {
                                 margin-top: 20px;
                                 text-align: center;
@@ -320,11 +356,7 @@ export class ClassyLayoutComponent implements OnInit, OnDestroy {
                         </div>
                         <div class="layers-list">
                             <div class="layers-title">Couches actives</div>
-                            ${layers.map(layer => `
-                                <div class="layer-item">
-                                    ${layer.name} (${this._layersService.getOpenLayersLegend(layer)})
-                                </div>
-                            `).join('')}
+                            ${layersHtml}
                         </div>
                         <div class="footer">
                             Ce document a été généré automatiquement. © ${new Date().getFullYear()} Stage d'été: Aymen derbel , Amin Akrimi
@@ -348,6 +380,25 @@ export class ClassyLayoutComponent implements OnInit, OnDestroy {
         } catch (error) {
             console.error("Erreur lors de l'impression:", error);
         }
+    }
+    
+    
+    private getLayersExtent(layers: CustomLayer[]): Extent | undefined {
+        let extent: Extent = [Infinity, Infinity, -Infinity, -Infinity];
+        let hasValidExtent = false;
+        layers.forEach(layer => {
+            if (layer.layer instanceof VectorLayer && layer.layer.getVisible()) {
+                const layerExtent = layer.layer.getSource().getExtent();
+                if (layerExtent.every(value => isFinite(value))) {
+                    extent[0] = Math.min(extent[0], layerExtent[0]);
+                    extent[1] = Math.min(extent[1], layerExtent[1]);
+                    extent[2] = Math.max(extent[2], layerExtent[2]);
+                    extent[3] = Math.max(extent[3], layerExtent[3]);
+                    hasValidExtent = true;
+                }
+            }
+        });
+        return hasValidExtent ? extent : undefined;
     }
 
     // getGeometryType(layer: CustomLayer): string {
@@ -382,17 +433,17 @@ export class ClassyLayoutComponent implements OnInit, OnDestroy {
     //     return 'Unknown';
     // }
 
-    private getLayersExtent(layers: CustomLayer[]): Extent {
-        let extent: Extent = [Infinity, Infinity, -Infinity, -Infinity];
-        layers.forEach(layer => {
-            if (layer.layer instanceof VectorLayer) {
-                const layerExtent = layer.layer.getSource().getExtent();
-                extent[0] = Math.min(extent[0], layerExtent[0]);
-                extent[1] = Math.min(extent[1], layerExtent[1]);
-                extent[2] = Math.max(extent[2], layerExtent[2]);
-                extent[3] = Math.max(extent[3], layerExtent[3]);
-            }
-        });
-        return extent;
-    }
+    // private getLayersExtent(layers: CustomLayer[]): Extent {
+    //     let extent: Extent = [Infinity, Infinity, -Infinity, -Infinity];
+    //     layers.forEach(layer => {
+    //         if (layer.layer instanceof VectorLayer) {
+    //             const layerExtent = layer.layer.getSource().getExtent();
+    //             extent[0] = Math.min(extent[0], layerExtent[0]);
+    //             extent[1] = Math.min(extent[1], layerExtent[1]);
+    //             extent[2] = Math.max(extent[2], layerExtent[2]);
+    //             extent[3] = Math.max(extent[3], layerExtent[3]);
+    //         }
+    //     });
+    //     return extent;
+    // }
 }

@@ -1,4 +1,4 @@
-<div class="fixed bottom-0 top-0   lg:sticky lg:left lg:h-screen lg:w-32 lg:shadow">
+<div class="fixed bottom-0 top-0   lg:sticky lg:left lg:h-screen lg:w-36 lg:shadow">
   
     <!-- Header -->
     <div class="quick-chat-container" [ngClass]="{'opened': opened}" >
@@ -95,7 +95,41 @@
                 </div>
               }
             </div>
-            
+            <!-- projets -->
+            <div class="mt-4">
+              <h3 class="text-xs mb-2 py-1 text-center font-semibold tracking-wider text-gray-500 border-b border-t border-gray-200">
+                Mes projets
+              </h3>
+              @if ((layers | filterLayers:'IMPORT').length > 0) {
+                @for (layer of layers | filterLayers:'IMPORT'; track trackByFn($index, layer); let i = $index) {
+                  <div class="relative layer-item" [attr.data-index]="i">
+                    <div class="flex justify-between cursor-pointer items-center px-3 py-2 transition-all duration-200 ease-in-out"
+                      [ngClass]="{
+                                          'bg-primary-50 dark:bg-gray-600': selectedLayer && selectedLayer === layer,
+                                          'opacity-50': draggedIndex === i
+                                        }" (click)="onLayerVisibilityChange(layer)" draggable="true" (dragstart)="onDragStart($event, i)"
+                      (dragend)="onDragEnd($event)" (dragover)="onDragOver($event, i)" (dragleave)="onDragLeave()"
+                      (drop)="onDrop($event, i)">
+                      <div class="flex items-center flex-grow min-w-0">
+                        <div class="legend-container w-6 h-6 flex-shrink-0 mr-2" [innerHTML]="getOpenLayersLegend(layer)"></div>
+                        <span class="layer-name" [matTooltip]="formatLayerName(layer.name)">
+                          {{ formatLayerName(layer.name) }}
+                        </span>
+                        <!-- <span class="short-name">{{ formatLayerName(layer.name).substring(0, 1) }}</span> -->
+                      </div>
+                    </div>
+                  </div>
+                }
+              } @else {
+              <div class="flex flex-col justify-center items-center pb-3">
+                <p class="text-xs justify-center items-center text-center py-2">Importer un projet:</p>
+                <button class="flex rounded-full bg-blue-100" mat-icon-button (click)="openFileInput()"
+                  [matTooltip]="'Importer une couche locale'">
+                  <mat-icon [svgIcon]="'heroicons_outline:arrow-down-tray'"></mat-icon>
+                </button>
+              </div>
+              }
+            </div>
             
             <!-- Couches importées -->
             <div class="mt-4">
@@ -148,10 +182,11 @@
               <mat-card-content class="pt-2">
                 <div class="flex items-center w-auto space-x-4 p-2 bg-gray-100 dark:bg-gray-700 rounded-md">
                   <!-- Visibility Icon -->
-                  <button mat-icon-button [matTooltip]="'Visibilté'" (click)="onLayerVisibilityChange(selectedLayer)">
+                  <button mat-icon-button [matTooltip]="'Visibilté'" (click)="onButtonLayerVisibilityChange(selectedLayer)">
                     <mat-icon [svgIcon]="selectedLayer.layer.getVisible() ? 'heroicons_outline:eye' : 'heroicons_outline:eye-slash'">
                     </mat-icon>
                   </button>
+
                 
                   <!-- Zoom to layer -->
                   <button mat-icon-button [matTooltip]="'Zoom sur la couche'" (click)="ZoomToLayer(selectedLayer)">
@@ -202,9 +237,11 @@
                   </button>
 
                   <!-- Go to Mini Map Button -->
-                  <button mat-icon-button color="primary" (click)="navigateToMiniMap()" matTooltip="Go to Mini Map">
-                    <mat-icon>map</mat-icon>
-                  </button>
+                  <button mat-icon-button (click)="swapLayerVisibility()" 
+        [matTooltip]="isOnlySelectedLayerVisible ? 'Show all layers' : 'Show only selected layer'"
+        [disabled]="!selectedLayer">
+  <mat-icon>swap_horiz</mat-icon>
+</button>
                 </div>
 
               </mat-card-content>

@@ -173,6 +173,7 @@ export class QuickChatComponent implements OnInit, OnDestroy, AfterViewInit {
             console.log(layers);
             this._changeDetectorRef.detectChanges();
         });
+        
     }
 
     ngAfterViewInit() { }
@@ -191,66 +192,7 @@ export class QuickChatComponent implements OnInit, OnDestroy, AfterViewInit {
         return this._layersService.getOpenLayersLegend(layer);
     }
 
-    //   generateSvgLegend(geometryType: string, fillColor: string, strokeColor: string, strokeWidth: number): string {
-    //     const size = 20;
-    //     let svg = '';
-
-    //     switch (geometryType) {
-    //       case 'Point':
-    //         svg = `<svg width="${size}" height="${size}" xmlns="http://www.w3.org/2000/svg">
-    //                  <circle cx="${size/2}" cy="${size/2}" r="${size/4}" fill="${fillColor}" stroke="${strokeColor}" stroke-width="${strokeWidth}" />
-    //                </svg>`;
-    //         break;
-    //       case 'LineString':
-    //       case 'MultiLineString':
-    //         svg = `<svg width="${size}" height="${size}" xmlns="http://www.w3.org/2000/svg">
-    //                  <line x1="0" y1="${size/2}" x2="${size}" y2="${size/2}" stroke="${strokeColor}" stroke-width="${strokeWidth}" />
-    //                </svg>`;
-    //         break;
-    //       case 'Polygon':
-    //       case 'MultiPolygon':
-    //         svg = `<svg width="${size}" height="${size}" xmlns="http://www.w3.org/2000/svg">
-    //                  <rect x="2" y="2" width="${size-4}" height="${size-4}" fill="${fillColor}" stroke="${strokeColor}" stroke-width="${strokeWidth}" />
-    //                </svg>`;
-    //         break;
-    //       default:
-    //         svg = `<svg width="${size}" height="${size}" xmlns="http://www.w3.org/2000/svg">
-    //                  <text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" font-size="14">${geometryType[0]}</text>
-    //                </svg>`;
-    //     }
-
-    //     return svg;
-    //   }
-
-    //   generateSvgLegend(geometryType: string, color: string): string {
-    //     const size = 20;
-    //     let svg = '';
-
-    //     switch (geometryType) {
-    //       case 'Point':
-    //         svg = `<svg width="${size}" height="${size}" xmlns="http://www.w3.org/2000/svg">
-    //                  <circle cx="${size/2}" cy="${size/2}" r="${size/4}" fill="${color}" />
-    //                </svg>`;
-    //         break;
-    //       case 'LineString':
-    //         svg = `<svg width="${size}" height="${size}" xmlns="http://www.w3.org/2000/svg">
-    //                  <line x1="0" y1="${size/2}" x2="${size}" y2="${size/2}" stroke="${color}" stroke-width="2" />
-    //                </svg>`;
-    //         break;
-    //       case 'Polygon':
-    //         svg = `<svg width="${size}" height="${size}" xmlns="http://www.w3.org/2000/svg">
-    //                  <rect x="2" y="2" width="${size-4}" height="${size-4}" fill="${color}" />
-    //                </svg>`;
-    //         break;
-    //       default:
-    //         svg = `<svg width="${size}" height="${size}" xmlns="http://www.w3.org/2000/svg">
-    //                  <text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" font-size="14">${geometryType[0]}</text>
-    //                </svg>`;
-    //     }
-
-    //     return svg;
-    //   }
-
+    
     selectLayer(layer: CustomLayer): void {
         {
             this.MMapselectedLayer = layer;
@@ -258,11 +200,64 @@ export class QuickChatComponent implements OnInit, OnDestroy, AfterViewInit {
             this._changeDetectorRef.detectChanges();
         }
     }
-
-    onLayerVisibilityChange(customLayer: CustomLayer): void {
+    onButtonLayerVisibilityChange(customLayer: CustomLayer): void {
         this._layersService.onLayerVisibilityChange(customLayer);
+        // this.selectLayer(customLayer);
+    
+    }
+    onLayerVisibilityChange(customLayer: CustomLayer): void {
+        if (!this.opened){
+        this._layersService.onLayerVisibilityChange(customLayer);
+    } else if (this.opened){
         this.selectLayer(customLayer);
     }
+    }
+
+    // mapvisibilitychange
+    private previousLayerState: { [id: string]: boolean } = {};
+  private isOnlySelectedLayerVisible: boolean = false;
+
+    swapLayerVisibility(): void {
+        if (!this.selectedLayer) {
+          console.error('No layer selected');
+          return;
+        }
+    
+        if (!this.isOnlySelectedLayerVisible) {
+          // Store current visibility state and show only selected layer
+          this.layers.forEach(layer => {
+            this.previousLayerState[layer.id] = layer.layer.getVisible();
+            if (layer.id === this.selectedLayer.id) {
+              if (!layer.layer.getVisible()) {
+                this._layersService.onLayerVisibilityChange(layer);
+              }
+            } else {
+              if (layer.layer.getVisible()) {
+                this._layersService.onLayerVisibilityChange(layer);
+              }
+            }
+          });
+          this.isOnlySelectedLayerVisible = true;
+        } else {
+          // Revert to previous visibility state
+          this.layers.forEach(layer => {
+            const shouldBeVisible = this.previousLayerState[layer.id];
+            if (layer.layer.getVisible() !== shouldBeVisible) {
+              this._layersService.onLayerVisibilityChange(layer);
+            }
+          });
+          this.isOnlySelectedLayerVisible = false;
+        }
+    
+        // Update MMapselectedLayer to reflect changes
+        this.MMapselectedLayer = { ...this.selectedLayer };
+    
+        // Trigger change detection
+        this._changeDetectorRef.detectChanges();
+    
+        // Render the main map
+        this._mapService.getMap().render();
+      }
 
     ZoomToLayer(customLayer: CustomLayer): void {
         const extent = (customLayer.layer.getSource() as VectorSource).getExtent();
