@@ -51,20 +51,26 @@ export class PMapComponent implements OnInit, OnDestroy {
   private initializeMap() {
     this.mapService.initializeMap('map');
   }
-
+  filterLayerByName(layers: any[], layerName: string): any | null {
+    return layers.find(layer => layer.name === layerName) || null;
+  }
+  
+  
   private initializeLayers() {
     this.layersSubscription = this.layersService.layers$.subscribe((layers) => {
         this.mapService.addLayersToMap(layers);
       });
 
-    this.layersService.fetchLayersFromWorkspace('topp').subscribe(fetchedLayers => {
-      if (fetchedLayers.length > 0) {
-        this.layersService.updateLayers(fetchedLayers);
-        fetchedLayers.forEach(customLayer => {
-          this.layersService.addFeatures(customLayer);
-        })
-      }
-    });
+      this.layersService.fetchLayersFromWorkspace('test_data').subscribe(fetchedLayers => {
+        if (fetchedLayers.length > 0) {
+          const poiAdminLayer = this.filterLayerByName(fetchedLayers, 'poi_admin');
+      
+          if (poiAdminLayer) {
+            this.layersService.updateLayers([poiAdminLayer]);
+            this.layersService.addFeatures(poiAdminLayer);
+          }
+        }
+      });
 
   }
   

@@ -1,0 +1,17 @@
+.map-capture-container {
+    display: flex;
+    align-items: center;
+    background-color: rgba(255, 255, 255, 0.8);
+    padding: 5px;
+    border-radius: 4px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  
+    button {
+      margin-right: 8px;
+    }
+  
+    .screenshot-count {
+      font-size: 12px;
+      color: #666;
+    }
+  }

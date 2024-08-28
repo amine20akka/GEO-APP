@@ -1,0 +1,11 @@
+<div class="map-capture-container">
+    <button mat-icon-button (click)="captureScreenshot()" matTooltip="Capture Screenshot">
+      <mat-icon>camera_alt</mat-icon>
+    </button>
+    <button mat-icon-button (click)="generateReport()" matTooltip="Generate Report" [disabled]="screenshots.length === 0">
+      <mat-icon>picture_as_pdf</mat-icon>
+    </button>
+    <span class="screenshot-count" *ngIf="screenshots.length > 0">
+      {{ screenshots.length }} screenshot{{ screenshots.length > 1 ? 's' : '' }} captured
+    </span>
+  </div>

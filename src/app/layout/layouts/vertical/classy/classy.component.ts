@@ -41,6 +41,7 @@ import { MatDialog, MatDialogModule, MatDialogRef } from '@angular/material/dial
 import { CommonModule } from '@angular/common';
 import { ImportService } from 'app/layout/common/local-import/import.service';
 import { DomSanitizer } from '@angular/platform-browser';
+import { MapCaptureComponent } from 'app/modules/admin/dashboards/map-capture/map-capture.component';
 
 @Component({
     selector: 'classy-layout',
@@ -48,6 +49,7 @@ import { DomSanitizer } from '@angular/platform-browser';
     encapsulation: ViewEncapsulation.None,
     standalone: true,
     imports: [
+        MapCaptureComponent,
         CommonModule,
         FuseLoadingBarComponent,
         FuseVerticalNavigationComponent,

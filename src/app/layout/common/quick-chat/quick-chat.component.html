@@ -64,9 +64,10 @@
                       class="flex justify-between cursor-pointer items-center px-3 py-2 transition-all duration-200 ease-in-out"
                       [ngClass]="{
                         'bg-primary-50 dark:bg-gray-600': selectedLayer && selectedLayer === layer,
-                        'opacity-50': draggedIndex === i
+                        'opacity-50': draggedIndex === i,
+                        'bg-gray-200 dark:bg-gray-700': !opened && layer.layer.getVisible()
                       }"
-                      (click)="onLayerVisibilityChange(layer)"
+                      (click)="onLayerClick(layer)"
                       draggable="true"
                       (dragstart)="onDragStart($event, i)"
                       (dragend)="onDragEnd($event)"
@@ -76,12 +77,16 @@
                     >
                       <div class="flex items-center">
                         <div class="legend-container w-6 h-6 flex-shrink-0 mr-2" [innerHTML]="getOpenLayersLegend(layer)"></div>
+                        <mat-icon *ngIf="opened" 
+                      [svgIcon]="layer.layer.getVisible() ? 'heroicons_solid:eye' : ''"
+                      class="icon-small">
+            </mat-icon> 
                         <span class="layer-name" [matTooltip]="layer.title">
                           {{ formatLayerName(layer.name) }}
                         </span>
-                        <!-- <span class="short-name">{{ formatLayerName(layer.name).substring(0, 1) }}</span> -->
+                          
                       </div>
-                    </div>
+                                       </div>
                   </div>
                 }
               } @else {
@@ -96,40 +101,7 @@
               }
             </div>
             <!-- projets -->
-            <div class="mt-4">
-              <h3 class="text-xs mb-2 py-1 text-center font-semibold tracking-wider text-gray-500 border-b border-t border-gray-200">
-                Mes projets
-              </h3>
-              @if ((layers | filterLayers:'IMPORT').length > 0) {
-                @for (layer of layers | filterLayers:'IMPORT'; track trackByFn($index, layer); let i = $index) {
-                  <div class="relative layer-item" [attr.data-index]="i">
-                    <div class="flex justify-between cursor-pointer items-center px-3 py-2 transition-all duration-200 ease-in-out"
-                      [ngClass]="{
-                                          'bg-primary-50 dark:bg-gray-600': selectedLayer && selectedLayer === layer,
-                                          'opacity-50': draggedIndex === i
-                                        }" (click)="onLayerVisibilityChange(layer)" draggable="true" (dragstart)="onDragStart($event, i)"
-                      (dragend)="onDragEnd($event)" (dragover)="onDragOver($event, i)" (dragleave)="onDragLeave()"
-                      (drop)="onDrop($event, i)">
-                      <div class="flex items-center flex-grow min-w-0">
-                        <div class="legend-container w-6 h-6 flex-shrink-0 mr-2" [innerHTML]="getOpenLayersLegend(layer)"></div>
-                        <span class="layer-name" [matTooltip]="formatLayerName(layer.name)">
-                          {{ formatLayerName(layer.name) }}
-                        </span>
-                        <!-- <span class="short-name">{{ formatLayerName(layer.name).substring(0, 1) }}</span> -->
-                      </div>
-                    </div>
-                  </div>
-                }
-              } @else {
-              <div class="flex flex-col justify-center items-center pb-3">
-                <p class="text-xs justify-center items-center text-center py-2">Importer un projet:</p>
-                <button class="flex rounded-full bg-blue-100" mat-icon-button (click)="openFileInput()"
-                  [matTooltip]="'Importer une couche locale'">
-                  <mat-icon [svgIcon]="'heroicons_outline:arrow-down-tray'"></mat-icon>
-                </button>
-              </div>
-              }
-            </div>
+            
             
             <!-- Couches importées -->
             <div class="mt-4">
@@ -180,34 +152,56 @@
                 </mat-card-title>
               </mat-card-header>
               <mat-card-content class="pt-2">
-                <div class="flex items-center w-auto space-x-4 p-2 bg-gray-100 dark:bg-gray-700 rounded-md">
-                  <!-- Visibility Icon -->
-                  <button mat-icon-button [matTooltip]="'Visibilté'" (click)="onButtonLayerVisibilityChange(selectedLayer)">
-                    <mat-icon [svgIcon]="selectedLayer.layer.getVisible() ? 'heroicons_outline:eye' : 'heroicons_outline:eye-slash'">
-                    </mat-icon>
-                  </button>
-
-                
-                  <!-- Zoom to layer -->
-                  <button mat-icon-button [matTooltip]="'Zoom sur la couche'" (click)="ZoomToLayer(selectedLayer)">
-                    <mat-icon>my_location</mat-icon>
-                  </button>
-                
-                  <!-- Attribute Table Icon -->
-                  <button mat-icon-button (click)="openAttributeTable(MMapselectedLayer.id)"
-                    [matTooltip]="'Ouvrir la table attributaire'">
-                    <mat-icon [svgIcon]="'heroicons_outline:table-cells'"></mat-icon>
-                  </button>
-                
+                <div class="grid grid-cols-6 gap-2 p-2">
+                  <!-- Visibility and Zoom Group -->
+                  <div class="col-span-2 flex justify-start space-x-2">
+                    <button mat-icon-button [matTooltip]="'Visibilité'" (click)="onButtonLayerVisibilityChange(selectedLayer)"
+                            class="text-gray-600 hover:text-blue-500 dark:text-gray-300 dark:hover:text-blue-400 transition-colors duration-200">
+                      <mat-icon [svgIcon]="selectedLayer.layer.getVisible() ? 'heroicons_outline:eye' : 'heroicons_outline:eye-slash'"></mat-icon>
+                    </button>
+                    <button mat-icon-button [matTooltip]="'Zoom sur la couche'" (click)="ZoomToLayer(selectedLayer)"
+                            class="text-gray-600 hover:text-blue-500 dark:text-gray-300 dark:hover:text-blue-400 transition-colors duration-200">
+                      <mat-icon>my_location</mat-icon>
+                    </button>
+                  </div>
+            
+                  <!-- Attribute Table -->
+                  <div class="col-span-1 flex justify-center">
+                    <button mat-icon-button (click)="openAttributeTable(MMapselectedLayer.id)" [matTooltip]="'Ouvrir la table attributaire'"
+                            class="text-gray-600 hover:text-green-500 dark:text-gray-300 dark:hover:text-green-400 transition-colors duration-200">
+                      <mat-icon [svgIcon]="'heroicons_outline:table-cells'"></mat-icon>
+                    </button>
+                  </div>
+            
+                  <!-- Preview and Swap Group -->
+                  <div class="col-span-2 flex justify-center space-x-2">
+                    <button mat-icon-button (click)="togglePreviewMode()" matTooltip="Sync with main map view"
+                            [ngClass]="{'text-blue-500 dark:text-blue-400': preview, 'text-gray-600 dark:text-gray-300': !preview}"
+                            class="hover:text-blue-600 dark:hover:text-blue-300 transition-colors duration-200">
+                      <mat-icon>sync</mat-icon>
+                    </button>
+                    <button mat-icon-button (click)="swapLayerVisibility()"
+                            [matTooltip]="isOnlySelectedLayerVisible ? 'Show all layers' : 'Show only selected layer'"
+                            [disabled]="!selectedLayer"
+                            class="text-gray-600 hover:text-purple-500 dark:text-gray-300 dark:hover:text-purple-400 transition-colors duration-200"
+                            [ngClass]="{'opacity-50 cursor-not-allowed': !selectedLayer}">
+                      <mat-icon>swap_horiz</mat-icon>
+                    </button>
+                  </div>
+            
                   <!-- Delete Layer -->
-                  <button mat-icon-button (click)="deleteLayer(selectedLayer.id)" [matTooltip]="'Supprimer la couche'">
-                    <mat-icon [svgIcon]="'heroicons_outline:trash'"></mat-icon>
-                  </button>
+                  <div class="col-span-1 flex justify-end">
+                    <button mat-icon-button (click)="deleteLayer(selectedLayer.id)" [matTooltip]="'Supprimer la couche'"
+                            class="text-gray-600 hover:text-red-500 dark:text-gray-300 dark:hover:text-red-400 transition-colors duration-200">
+                      <mat-icon [svgIcon]="'heroicons_outline:trash'"></mat-icon>
+                    </button>
+                  </div>
                 </div>
 
                 <div #mapContainer class="mt-4 transition-all duration-300 ease-in-out"
                   [ngClass]="{'sticky top-0 z-10': isMapSticky}">
-                  <app-mini-map [selectedLayer]="MMapselectedLayer"
+                  <app-mini-map [selectedLayer]="MMapselectedLayer"   [currentMapView]="currentMapView">
+
                     class="w-full h-48 rounded overflow-hidden"></app-mini-map>
                 </div>
                 <div class="mt-4 flex justify-center space-x-4">
@@ -215,33 +209,27 @@
                   matTooltip="Toggle Preview Mode">
                   <mat-icon>visibility</mat-icon>
                 </button> -->
-                  <button mat-icon-button (click)="togglePreviewMode()" matTooltip="Toggle Preview Mode">
-                    <mat-icon [ngStyle]="{'color': preview ? 'blue' : 'gray'}">visibility</mat-icon>
-                  </button>
+                
 
                   <!-- Backward Button -->
-                  <button mat-icon-button color="primary" (click)="goBackward()" matTooltip="Go Backward">
+                  <!-- <button mat-icon-button color="primary" (click)="goBackward()" matTooltip="Go Backward">
                     <mat-icon>arrow_back</mat-icon>
-                  </button>
+                  </button> -->
                   <!-- Preview Mode Button -->
 
 
                   <!-- Save Button -->
-                  <button mat-icon-button color="primary" (click)="saveMapState()" matTooltip="Save Map State">
+                  <!-- <button mat-icon-button color="primary" (click)="saveMapState()" matTooltip="Save Map State">
                     <mat-icon>save</mat-icon>
-                  </button>
+                  </button> -->
 
                   <!-- Forward Button -->
-                  <button mat-icon-button color="primary" (click)="goForward()" matTooltip="Go Forward">
+                  <!-- <button mat-icon-button color="primary" (click)="goForward()" matTooltip="Go Forward">
                     <mat-icon>arrow_forward</mat-icon>
-                  </button>
+                  </button> -->
 
                   <!-- Go to Mini Map Button -->
-                  <button mat-icon-button (click)="swapLayerVisibility()" 
-        [matTooltip]="isOnlySelectedLayerVisible ? 'Show all layers' : 'Show only selected layer'"
-        [disabled]="!selectedLayer">
-  <mat-icon>swap_horiz</mat-icon>
-</button>
+                 
                 </div>
 
               </mat-card-content>

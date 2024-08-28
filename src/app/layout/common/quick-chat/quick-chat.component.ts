@@ -214,6 +214,13 @@ export class QuickChatComponent implements OnInit, OnDestroy, AfterViewInit {
     }
 
     // mapvisibilitychange
+    onLayerClick(layer: CustomLayer): void {
+        if (this.opened) {
+          this.selectLayer(layer);
+        } else {
+          this.onLayerVisibilityChange(layer);
+        }
+      }
     private previousLayerState: { [id: string]: boolean } = {};
   private isOnlySelectedLayerVisible: boolean = false;
 
@@ -324,6 +331,9 @@ export class QuickChatComponent implements OnInit, OnDestroy, AfterViewInit {
 
         // Demandez au service de supprimer la couche
         this._layersService.removeLayer(layerId);
+
+        this.selectedLayer = null;
+        this.MMapselectedLayer = null;
 
         // La mise à jour de this.layers se fera automatiquement via la souscription existante
     }
@@ -896,11 +906,21 @@ export class QuickChatComponent implements OnInit, OnDestroy, AfterViewInit {
     /////////////////////tools
     preview = false; // Initially false
     savepressed = false;
+    currentMapView: { center: number[], zoom: number } | null = null;
 
     togglePreviewMode() {
         this.preview = !this.preview;
+        if (this.preview) {
+          const view = this._mapService.getMap().getView();
+          this.currentMapView = {
+            center: view.getCenter(),
+            zoom: view.getZoom()
+          };
+        } else {
+          this.currentMapView = null;
+        }
         console.log(`Preview Mode is now ${this.preview ? 'activated' : 'deactivated'}`);
-    }
+      }
 
     goBackward() {
         console.log('Navigating backward');

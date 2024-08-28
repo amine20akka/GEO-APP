@@ -26,27 +26,30 @@ import { defaults as defaultControls, FullScreen } from 'ol/control';
 })
 export class MiniMapComponent implements OnInit, OnChanges, AfterViewInit, OnDestroy {
   @Input() selectedLayer: CustomLayer | null = null;
+  @Input() currentMapView: { center: number[], zoom: number } | null = null;
   @ViewChild('mapElement', { static: false }) mapElement: ElementRef;
-   clicked : boolean = false;
+  clicked: boolean = false;
   private map: Map | null = null;
   isExpanded: boolean = false;
+  private layerExtent: Extent | null = null;
 
-  constructor(private mapService: MapService, private _router: Router) {
-  }
+  constructor(private mapService: MapService, private _router: Router) {}
 
-  ngOnInit() { }
+  ngOnInit() {}
 
   ngAfterViewInit() {
     this.initMap();
   }
 
   ngOnChanges(changes: SimpleChanges) {
-    if ( changes.selectedLayer.firstChange) {
-      this.updateLayerStyle();
-    };
-    if(changes.selectedLayer ){
+    if (changes.selectedLayer) {
+      if (changes.selectedLayer.firstChange) {
+        this.updateLayerStyle();
+      }
       this.updateMap();
-
+    }
+    if (changes.currentMapView) {
+      this.updateMapView();
     }
   }
 
@@ -56,6 +59,7 @@ export class MiniMapComponent implements OnInit, OnChanges, AfterViewInit, OnDes
       this.map = null;
     }
   }
+
 
   private initMap() {
     if (this.mapElement && this.mapElement.nativeElement) {
@@ -104,7 +108,7 @@ export class MiniMapComponent implements OnInit, OnChanges, AfterViewInit, OnDes
       // Clear existing layers except the base layer
       const layersToRemove = this.map.getLayers().getArray().slice(1);
       layersToRemove.forEach(layer => this.map.removeLayer(layer));
-
+  
       // Clone the selected layer or create a new layer with the same source
       let miniMapLayer;
       if (this.selectedLayer.layer instanceof VectorLayer) {
@@ -120,39 +124,90 @@ export class MiniMapComponent implements OnInit, OnChanges, AfterViewInit, OnDes
         console.error('Unsupported layer type');
         return;
       }
-
+  
       // Add the cloned layer to the mini-map
       this.map.addLayer(miniMapLayer);
-
+  
       // Determine the extent based on the layer type and available data
-      let extent: Extent | undefined;
-
       if (this.selectedLayer.type === 'VECTOR' && this.selectedLayer.features.length > 0) {
-        extent = this.getExtentFromFeatures(this.selectedLayer.features);
+        this.layerExtent = this.getExtentFromFeatures(this.selectedLayer.features);
       } else if (this.selectedLayer.type === 'RASTER') {
-        extent = this.getExtentFromRasterLayer(miniMapLayer);
+        this.layerExtent = this.getExtentFromRasterLayer(miniMapLayer);
       }
-
-      if (extent && !extent.every(v => v === Infinity || v === -Infinity)) {
-        this.map.getView().fit(extent, {
-          padding: [50, 50, 50, 50],
-          maxZoom: 19,
-          duration: 1000  // Add smooth animation
-        });
-      } else {
-        this.map.getView().setCenter([0, 0]);
-        this.map.getView().setZoom(2);
-      }
-
+  
       this.map.updateSize();
-
+  
+      // If currentMapView is set, use it; otherwise, fit to layer extent
+      if (this.currentMapView) {
+        this.map.getView().setCenter(this.currentMapView.center);
+        this.map.getView().setZoom(this.currentMapView.zoom);
+      } else {
+        this.fitToLayerExtent();
+      }
+  
       // Force a redraw after a short delay
       setTimeout(() => {
         this.map.renderSync();
       }, 500);
     }
   }
+  private updateMapView() {
+    if (this.map && this.currentMapView) {
+      this.map.getView().setCenter(this.currentMapView.center);
+      // Zoom out by 1 level for a wider view
+      const adjustedZoom = Math.max(0, this.currentMapView.zoom - 2);
+      this.map.getView().setZoom(adjustedZoom);
+    } else if (this.map && this.layerExtent) {
+      this.fitToLayerExtent();
+    }
+  }
 
+  private fitToLayerExtent() {
+    if (this.map && this.layerExtent && !this.layerExtent.every(v => v === Infinity || v === -Infinity)) {
+      this.map.getView().fit(this.layerExtent, {
+        padding: [50, 50, 50, 50],
+        maxZoom: 18, // Reduced max zoom for a slightly wider view
+        duration: 1000
+      });
+    } else if (this.map) {
+      this.map.getView().setCenter([0, 0]);
+      this.map.getView().setZoom(2);
+    }
+  }
+
+  // private fitToLayerExtent() {
+  //   if (this.map && this.layerExtent && !this.layerExtent.every(v => v === Infinity || v === -Infinity)) {
+  //     this.map.getView().fit(this.layerExtent, {
+  //       padding: [50, 50, 50, 50],
+  //       maxZoom: 19,
+  //       duration: 1000  // Add smooth animation
+  //     });
+  //   } else if (this.map) {
+  //     this.map.getView().setCenter([0, 0]);
+  //     this.map.getView().setZoom(2);
+  //   }
+  // }
+  // private updateMapView() {
+  //   if (this.map && this.currentMapView) {
+  //     this.map.getView().setCenter(this.currentMapView.center);
+  //     this.map.getView().setZoom(this.currentMapView.zoom);
+  //   } else if (this.map && this.layerExtent) {
+  //     this.fitToLayerExtent();
+  //   }
+  // }
+
+  // private fitToLayerExtent() {
+  //   if (this.map && this.layerExtent && !this.layerExtent.every(v => v === Infinity || v === -Infinity)) {
+  //     this.map.getView().fit(this.layerExtent, {
+  //       padding: [50, 50, 50, 50],
+  //       maxZoom: 19,
+  //       duration: 1000
+  //     });
+  //   } else {
+  //     this.map.getView().setCenter([0, 0]);
+  //     this.map.getView().setZoom(2);
+  //   }
+  // }
 
 
   private updateMapSize() {
